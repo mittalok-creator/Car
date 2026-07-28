@@ -196,6 +196,14 @@
 
     <!-- MORE -->
     <section id="page-more" class="page">
+      <button type="button" id="openSplitBtn" class="form-card link-card">
+        <div>
+          <div class="link-card-title">🧮 Carpool Cost Splitter</div>
+          <div class="link-card-sub">Monthly running cost split among co-riders</div>
+        </div>
+        <span class="link-card-arrow">›</span>
+      </button>
+
       <div class="form-card">
         <h2>Vehicle & Sync</h2>
         <form id="settingsForm">
@@ -239,6 +247,90 @@
         </form>
         <p class="hint">Next service reminder is set automatically when you add a service record.</p>
       </div>
+    </section>
+
+    <!-- SPLIT CALCULATOR -->
+    <section id="page-split" class="page">
+      <div class="section-head">
+        <h2>🧮 Monthly Car Expense Split</h2>
+      </div>
+
+      <div class="form-card">
+        <h2>Inputs</h2>
+        <form id="splitForm">
+          <div class="form-row">
+            <label>Month</label>
+            <input type="month" id="spMonth">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>No. of Working Days</label>
+              <input type="number" id="spWorkingDays" min="0" step="1" value="23">
+            </div>
+            <div class="form-row">
+              <label>No. of Days Car Runs</label>
+              <input type="number" id="spRunDays" min="0" step="1" value="23">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>Car Mileage (km/litre)</label>
+              <input type="number" id="spMileage" min="0" step="0.01" value="13">
+            </div>
+            <div class="form-row">
+              <label>Petrol Price (₹/litre)</label>
+              <input type="number" id="spPetrolPrice" min="0" step="0.01" value="103">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>Running KMs per Day</label>
+              <input type="number" id="spKmPerDay" min="0" step="0.1" value="80">
+            </div>
+            <div class="form-row">
+              <label>Maintenance per Day (₹)</label>
+              <input type="number" id="spMaintenance" min="0" step="0.01" value="50">
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Toll per Month (₹)</label>
+            <input type="number" id="spToll" min="0" step="0.01" value="360">
+          </div>
+          <div class="form-row">
+            <label>Names sharing the ride <span class="hint">one per line</span></label>
+            <textarea id="spNames" rows="4" placeholder="Alok Mittal&#10;Name 2&#10;Name 3"></textarea>
+          </div>
+          <div class="form-row">
+            <label>Created by <span class="hint">shown on the shared card</span></label>
+            <input type="text" id="spCreatedBy" placeholder="Your name">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Save</button>
+        </form>
+      </div>
+
+      <div class="form-card">
+        <h2>Per-Day Breakdown</h2>
+        <div class="calc-row"><span>Fuel needed per Day (litre)</span><strong id="spFuelPerDay">--</strong></div>
+        <div class="calc-row"><span>Fuel Cost per Day (₹)</span><strong id="spFuelCostPerDay">--</strong></div>
+        <div class="calc-row total"><span>Full Daily Cost (incl. toll)</span><strong id="spFullDailyCost">--</strong></div>
+      </div>
+
+      <div class="form-card">
+        <h2>Monthly Totals</h2>
+        <div class="calc-row total"><span>Total Monthly Expense (₹)</span><strong id="spTotalMonthly">--</strong></div>
+        <div class="calc-row"><span>No. of People (from names)</span><strong id="spPeopleCount">--</strong></div>
+      </div>
+
+      <div class="split-result-card">
+        <div class="split-result-label">Per Head Expense for the Month</div>
+        <div class="split-result-value" id="spPerHead">₹0</div>
+      </div>
+
+      <div class="sync-actions">
+        <button id="shareSplitBtn" class="btn btn-primary">📤 Share as image</button>
+        <button id="downloadSplitBtn" class="btn btn-secondary">Download image</button>
+      </div>
+      <canvas id="splitCanvas" width="1100" height="1450" class="hidden"></canvas>
     </section>
 
   </main>

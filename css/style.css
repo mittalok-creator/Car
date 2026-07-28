@@ -165,6 +165,56 @@ body {
 .section-head { margin: 6px 0 14px; }
 .section-head h2 { margin: 0; font-size: 17px; letter-spacing: 0.01em; }
 
+/* Link card (e.g. More -> Split Calculator) */
+.link-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.link-card-title { font-size: 15px; font-weight: 700; }
+.link-card-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.link-card-arrow { font-size: 22px; color: var(--muted); }
+
+/* Split calculator */
+textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  resize: vertical;
+}
+.calc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.calc-row:last-child { border-bottom: none; }
+.calc-row span { color: var(--muted); }
+.calc-row strong { font-size: 15px; }
+.calc-row.total strong { font-size: 16px; color: var(--primary); }
+
+.split-result-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 18px;
+}
+.split-result-label { font-size: 13px; opacity: 0.9; margin-bottom: 8px; }
+.split-result-value { font-size: 32px; font-weight: 800; }
+
 /* Forms */
 .entry-form, .form-card {
   background: var(--surface);

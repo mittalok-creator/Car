@@ -12,13 +12,22 @@
 
   const $ = (id) => document.getElementById(id);
   const fmtMoney = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  const fmtMoney2 = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const todayStr = () => new Date().toISOString().slice(0, 10);
 
   /* ---------- Navigation ---------- */
   document.querySelectorAll(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => goPage(btn.dataset.page));
   });
-  $("backBtn").addEventListener("click", () => goPage("home"));
+  $("backBtn").addEventListener("click", () => {
+    const onSplit = $("page-split").classList.contains("active");
+    goPage(onSplit ? "more" : "home");
+  });
+  $("openSplitBtn").addEventListener("click", () => {
+    document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === "page-split"));
+    $("backBtn").classList.remove("hidden");
+    renderSplit();
+  });
 
   function goPage(page) {
     document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
@@ -460,6 +469,242 @@
     a.click();
   });
 
+  /* ---------- Split Calculator ---------- */
+  function readSplitInputs() {
+    return {
+      month: $("spMonth").value,
+      workingDays: Number($("spWorkingDays").value || 0),
+      runDays: Number($("spRunDays").value || 0),
+      mileage: Number($("spMileage").value || 0),
+      petrolPrice: Number($("spPetrolPrice").value || 0),
+      kmPerDay: Number($("spKmPerDay").value || 0),
+      maintenance: Number($("spMaintenance").value || 0),
+      toll: Number($("spToll").value || 0),
+      names: $("spNames").value.split("\n").map((s) => s.trim()).filter(Boolean),
+      createdBy: $("spCreatedBy").value.trim(),
+    };
+  }
+
+  function computeSplit(inp) {
+    const fuelPerDay = inp.mileage > 0 ? inp.kmPerDay / inp.mileage : 0;
+    const fuelCostPerDay = fuelPerDay * inp.petrolPrice;
+    const tollPerDay = inp.runDays > 0 ? inp.toll / inp.runDays : 0;
+    const fullDailyCost = fuelCostPerDay + inp.maintenance + tollPerDay;
+    const totalMonthly = fullDailyCost * inp.runDays;
+    const peopleCount = inp.names.length || 1;
+    const perHead = totalMonthly / peopleCount;
+    return { fuelPerDay, fuelCostPerDay, fullDailyCost, totalMonthly, peopleCount, perHead };
+  }
+
+  function fillSplitForm() {
+    const sp = settings.split || {};
+    $("spMonth").value = sp.month || new Date().toISOString().slice(0, 7);
+    $("spWorkingDays").value = sp.workingDays ?? 23;
+    $("spRunDays").value = sp.runDays ?? 23;
+    $("spMileage").value = sp.mileage ?? 13;
+    $("spPetrolPrice").value = sp.petrolPrice ?? 103;
+    $("spKmPerDay").value = sp.kmPerDay ?? 80;
+    $("spMaintenance").value = sp.maintenance ?? 50;
+    $("spToll").value = sp.toll ?? 360;
+    $("spNames").value = (sp.names || []).join("\n");
+    $("spCreatedBy").value = sp.createdBy || "";
+  }
+
+  function renderSplit() {
+    const inp = readSplitInputs();
+    const c = computeSplit(inp);
+    $("spFuelPerDay").textContent = `${c.fuelPerDay.toFixed(2)} L`;
+    $("spFuelCostPerDay").textContent = fmtMoney2(c.fuelCostPerDay);
+    $("spFullDailyCost").textContent = fmtMoney2(c.fullDailyCost);
+    $("spTotalMonthly").textContent = fmtMoney2(c.totalMonthly);
+    $("spPeopleCount").textContent = c.peopleCount;
+    $("spPerHead").textContent = fmtMoney2(Math.round(c.perHead));
+  }
+
+  $("splitForm").addEventListener("input", renderSplit);
+  $("splitForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    settings = { ...settings, split: readSplitInputs() };
+    Store.saveSettings(settings);
+    alert("Saved.");
+  });
+
+  function monthLabel(monthValue) {
+    if (!monthValue) return "";
+    const [y, m] = monthValue.split("-");
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+  }
+
+  function drawSplitCard(inp, c) {
+    const canvas = $("splitCanvas");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const dark = "#2f5233";
+    const sage = "#7fa887";
+    const altRow = "#eaf3e7";
+    const yellow = "#fdf3c4";
+    const blue = "#1a3fd6";
+    const marginX = 40;
+    const contentW = W - marginX * 2;
+    let y = 0;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = dark;
+    ctx.fillRect(0, y, W, 110);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 42px -apple-system, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Monthly Car Expense", W / 2, y + 55);
+    y += 150;
+
+    ctx.fillStyle = sage;
+    ctx.fillRect(marginX, y, contentW, 50);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 24px -apple-system, Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("INPUTS", marginX + 20, y + 25);
+    y += 50;
+
+    const inputRows = [
+      ["Month", monthLabel(inp.month)],
+      ["No. of Working Days", String(inp.workingDays)],
+      ["No. of Days Car Runs", String(inp.runDays)],
+      ["Car Mileage (km / litre)", inp.mileage.toFixed(2)],
+      ["Petrol Price (₹ / litre)", inp.petrolPrice.toFixed(2)],
+      ["Running KMs per Day", inp.kmPerDay.toFixed(2)],
+      ["Maintenance per Day (₹)", `₹${inp.maintenance.toFixed(2)}`],
+      ["Toll per Month (₹)", `₹${inp.toll.toFixed(2)}`],
+    ];
+    const rowH = 52;
+    const valColW = 300;
+    inputRows.forEach(([label, value], i) => {
+      ctx.fillStyle = i % 2 === 0 ? "#ffffff" : altRow;
+      ctx.fillRect(marginX, y, contentW - valColW, rowH);
+      ctx.fillStyle = yellow;
+      ctx.fillRect(marginX + contentW - valColW, y, valColW, rowH);
+      ctx.strokeStyle = "#d7ddd2";
+      ctx.strokeRect(marginX, y, contentW, rowH);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.font = "24px -apple-system, Arial";
+      ctx.textAlign = "left";
+      ctx.fillText(label, marginX + 16, y + rowH / 2 + 1);
+      ctx.fillStyle = blue;
+      ctx.font = "bold 24px -apple-system, Arial";
+      ctx.textAlign = "right";
+      ctx.fillText(value, marginX + contentW - 16, y + rowH / 2 + 1);
+      y += rowH;
+    });
+
+    y += 30;
+    ctx.fillStyle = sage;
+    ctx.fillRect(marginX, y, contentW, 50);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 22px -apple-system, Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("PER-DAY BREAKDOWN", marginX + 20, y + 25);
+    y += 50;
+
+    const breakdownRows = [
+      ["Fuel needed per Day (litre)", c.fuelPerDay.toFixed(2), false],
+      ["Fuel Cost per Day (₹)", fmtMoney2(c.fuelCostPerDay), false],
+      ["Full Daily Cost (incl. toll)", fmtMoney2(c.fullDailyCost), true],
+    ];
+    breakdownRows.forEach(([label, value, bold], i) => {
+      ctx.fillStyle = i % 2 === 0 ? "#ffffff" : altRow;
+      ctx.fillRect(marginX, y, contentW, rowH);
+      ctx.strokeStyle = "#d7ddd2";
+      ctx.strokeRect(marginX, y, contentW, rowH);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.font = `${bold ? "bold " : ""}24px -apple-system, Arial`;
+      ctx.textAlign = "left";
+      ctx.fillText(label, marginX + 16, y + rowH / 2 + 1);
+      ctx.textAlign = "right";
+      ctx.fillText(value, marginX + contentW - 16, y + rowH / 2 + 1);
+      y += rowH;
+    });
+
+    y += 30;
+    ctx.fillStyle = sage;
+    ctx.fillRect(marginX, y, contentW, 50);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 22px -apple-system, Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("MONTHLY TOTALS", marginX + 20, y + 25);
+    y += 50;
+
+    const totalRows = [
+      ["Total Monthly Expense (₹)", fmtMoney2(c.totalMonthly), true],
+      ["No. of People (from names)", String(c.peopleCount), false],
+    ];
+    totalRows.forEach(([label, value, bold], i) => {
+      ctx.fillStyle = i % 2 === 0 ? "#ffffff" : altRow;
+      ctx.fillRect(marginX, y, contentW, rowH);
+      ctx.strokeStyle = "#d7ddd2";
+      ctx.strokeRect(marginX, y, contentW, rowH);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.font = `${bold ? "bold " : ""}24px -apple-system, Arial`;
+      ctx.textAlign = "left";
+      ctx.fillText(label, marginX + 16, y + rowH / 2 + 1);
+      ctx.textAlign = "right";
+      ctx.fillText(value, marginX + contentW - 16, y + rowH / 2 + 1);
+      y += rowH;
+    });
+
+    y += 30;
+    ctx.fillStyle = dark;
+    ctx.fillRect(marginX, y, contentW, 60);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 26px -apple-system, Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Per Head Expense for the Month", W / 2, y + 30);
+    y += 60;
+    ctx.fillStyle = dark;
+    ctx.fillRect(marginX, y, contentW, 100);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 48px -apple-system, Arial";
+    ctx.fillText(fmtMoney2(Math.round(c.perHead)), W / 2, y + 50);
+    y += 140;
+
+    if (inp.createdBy) {
+      ctx.fillStyle = "#555555";
+      ctx.font = "22px -apple-system, Arial";
+      ctx.textAlign = "right";
+      ctx.fillText(`Created by ${inp.createdBy}`, marginX + contentW, y);
+      y += 30;
+    }
+  }
+
+  async function shareOrDownloadSplit(mode) {
+    const inp = readSplitInputs();
+    const c = computeSplit(inp);
+    drawSplitCard(inp, c);
+    const canvas = $("splitCanvas");
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    const fileName = `car-expense-split-${inp.month || "monthly"}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    if (mode === "share" && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "Monthly Car Expense" });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  $("shareSplitBtn").addEventListener("click", () => shareOrDownloadSplit("share"));
+  $("downloadSplitBtn").addEventListener("click", () => shareOrDownloadSplit("download"));
+
   /* ---------- Init ---------- */
   function init() {
     $("fuelDate").value = todayStr();
@@ -467,9 +712,11 @@
     $("expDate").value = todayStr();
     fillSettingsForm();
     fillReminderForm();
+    fillSplitForm();
     populateCategoryFilter();
     updateSyncButtons();
     renderHome();
+    renderSplit();
   }
 
   init();
