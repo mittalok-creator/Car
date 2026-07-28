@@ -81,33 +81,85 @@
   }
 
   const DEFAULT_VEHICLE_NAME = "Volkswagen Taigun (2024) · UP81DE4446";
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+  function applyPhotoTransform() {
+    const pos = settings.vehiclePhotoPos || { x: 50, y: 50 };
+    const zoom = settings.vehiclePhotoZoom || 1;
+    $("vehiclePhotoImg").style.objectPosition = `${pos.x}% ${pos.y}%`;
+    $("vehiclePhotoImg").style.transform = `scale(${zoom})`;
+  }
 
   function renderVehicleCard() {
     $("vehicleName").textContent = settings.vehicleName || DEFAULT_VEHICLE_NAME;
     const odo = getLatestOdometer();
     $("vehicleOdoValue").textContent = odo ? odo.toLocaleString("en-IN") : "--";
-    if (settings.vehiclePhoto) {
+    const hasPhoto = Boolean(settings.vehiclePhoto);
+    if (hasPhoto) {
       $("vehiclePhotoImg").src = settings.vehiclePhoto;
       $("vehiclePhotoImg").classList.remove("hidden");
       $("vehiclePhotoPlaceholder").classList.add("hidden");
+      applyPhotoTransform();
     } else {
       $("vehiclePhotoImg").classList.add("hidden");
       $("vehiclePhotoPlaceholder").classList.remove("hidden");
     }
+    $("adjustPhotoBtn").classList.toggle("hidden", !hasPhoto);
   }
 
   $("editVehicleBtn").addEventListener("click", () => goPage("more"));
+  $("changePhotoBtn").addEventListener("click", () => $("vehiclePhotoInput").click());
   $("vehiclePhotoInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       settings.vehiclePhoto = reader.result;
+      settings.vehiclePhotoPos = { x: 50, y: 50 };
+      settings.vehiclePhotoZoom = 1;
       Store.saveSettings(settings);
       renderVehicleCard();
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   });
+
+  /* ---------- Photo reposition / zoom ---------- */
+  let photoDragStart = null;
+
+  $("adjustPhotoBtn").addEventListener("click", () => {
+    $("vehZoomSlider").value = Math.round((settings.vehiclePhotoZoom || 1) * 100);
+    $("vehAdjustOverlay").classList.remove("hidden");
+  });
+
+  $("vehAdjustDoneBtn").addEventListener("click", () => {
+    $("vehAdjustOverlay").classList.add("hidden");
+    Store.saveSettings(settings);
+  });
+
+  $("vehZoomSlider").addEventListener("input", (e) => {
+    settings.vehiclePhotoZoom = Number(e.target.value) / 100;
+    applyPhotoTransform();
+  });
+
+  const adjustOverlay = $("vehAdjustOverlay");
+  adjustOverlay.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".veh-adjust-controls")) return;
+    photoDragStart = { x: e.clientX, y: e.clientY, pos: { ...(settings.vehiclePhotoPos || { x: 50, y: 50 }) } };
+    adjustOverlay.setPointerCapture(e.pointerId);
+  });
+  adjustOverlay.addEventListener("pointermove", (e) => {
+    if (!photoDragStart) return;
+    const rect = $("vehHero").getBoundingClientRect();
+    const dx = e.clientX - photoDragStart.x;
+    const dy = e.clientY - photoDragStart.y;
+    settings.vehiclePhotoPos = {
+      x: clamp(photoDragStart.pos.x - (dx / rect.width) * 100, 0, 100),
+      y: clamp(photoDragStart.pos.y - (dy / rect.height) * 100, 0, 100),
+    };
+    applyPhotoTransform();
+  });
+  ["pointerup", "pointercancel"].forEach((evt) => adjustOverlay.addEventListener(evt, () => (photoDragStart = null)));
 
   document.querySelectorAll(".qa-btn[data-page]").forEach((btn) => {
     btn.addEventListener("click", () => goPage(btn.dataset.page));

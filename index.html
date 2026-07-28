@@ -27,22 +27,31 @@
     <!-- HOME -->
     <section id="page-home" class="page active">
 
-      <div class="veh-hero">
+      <div class="veh-hero" id="vehHero">
         <div class="veh-hero-glow"></div>
+        <img id="vehiclePhotoImg" class="veh-hero-photo hidden" alt="">
+        <div class="veh-hero-scrim"></div>
+
         <div class="veh-hero-top">
           <div class="veh-hero-name" id="vehicleName">My Car</div>
-          <button class="veh-hero-edit" id="editVehicleBtn" aria-label="edit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.06 5.94 18.06 9.94M4 20l1-4 10.7-10.7a1.5 1.5 0 0 1 2.1 0l1.9 1.9a1.5 1.5 0 0 1 0 2.1L9 20H4Z"/></svg>
-          </button>
+          <div class="veh-hero-actions">
+            <button class="veh-hero-icon-btn hidden" id="adjustPhotoBtn" aria-label="reposition photo" title="Reposition photo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v4M7 7H3M7 7l4 4M17 21v-4M17 17h4M17 17l-4-4"/></svg>
+            </button>
+            <button class="veh-hero-icon-btn" id="changePhotoBtn" aria-label="change photo" title="Change photo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1-2h6l1 2h2.5A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18Z"/><circle cx="12" cy="13" r="3.3"/></svg>
+            </button>
+            <button class="veh-hero-icon-btn" id="editVehicleBtn" aria-label="edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.06 5.94 18.06 9.94M4 20l1-4 10.7-10.7a1.5 1.5 0 0 1 2.1 0l1.9 1.9a1.5 1.5 0 0 1 0 2.1L9 20H4Z"/></svg>
+            </button>
+          </div>
         </div>
-
-        <label class="veh-hero-visual" for="vehiclePhotoInput">
-          <img id="vehiclePhotoImg" class="veh-photo-img hidden" alt="">
-          <span id="vehiclePhotoPlaceholder" class="veh-hero-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-4.4L5.8 7A2 2 0 0 1 7.7 5.6h8.6A2 2 0 0 1 18.2 7L20 11.6V16"/><path d="M4 16h16v2.5a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1V17H7.5v1.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/><path d="M5 11.6h14"/></svg>
-          </span>
-        </label>
         <input type="file" id="vehiclePhotoInput" accept="image/*" class="hidden">
+
+        <label id="vehiclePhotoPlaceholder" class="veh-hero-placeholder" for="vehiclePhotoInput">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-4.4L5.8 7A2 2 0 0 1 7.7 5.6h8.6A2 2 0 0 1 18.2 7L20 11.6V16"/><path d="M4 16h16v2.5a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1V17H7.5v1.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/><path d="M5 11.6h14"/></svg>
+          <span class="veh-hero-placeholder-hint">Tap to add a photo</span>
+        </label>
 
         <div class="veh-hero-metric">
           <span class="veh-hero-value" id="vehicleOdoValue">--</span>
@@ -66,6 +75,15 @@
             <span class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.2"/><path d="M8 7.2h8"/><circle cx="8.3" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="15.7" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="8.3" cy="15.6" r=".75" fill="currentColor" stroke="none"/><circle cx="12" cy="15.6" r=".75" fill="currentColor" stroke="none"/><circle cx="15.7" cy="15.6" r=".75" fill="currentColor" stroke="none"/></svg></span>
             <span>Split</span>
           </button>
+        </div>
+
+        <div class="veh-adjust-overlay hidden" id="vehAdjustOverlay">
+          <div class="veh-adjust-hint">Drag to reposition</div>
+          <div class="veh-adjust-controls">
+            <svg class="veh-adjust-zoom-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6"/></svg>
+            <input type="range" id="vehZoomSlider" min="100" max="250" value="100">
+            <button type="button" class="btn btn-primary" id="vehAdjustDoneBtn">Done</button>
+          </div>
         </div>
       </div>
 
