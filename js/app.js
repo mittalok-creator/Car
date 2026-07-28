@@ -121,7 +121,7 @@
       litres,
       odometer: Number($("fuelOdometer").value || 0),
       description: "Fuel fill-up",
-      paymentMode: "",
+      paymentMode: $("fuelPayment").value,
       notes: "",
     });
     expenses = Store.loadExpenses();
@@ -160,7 +160,7 @@
         <div class="entry-card">
           <div class="entry-main">
             <div class="entry-title">${fmtMoney(e.amount)} · ${e.litres} L</div>
-            <div class="entry-sub">${e.date} · ${e.odometer.toLocaleString("en-IN")} km</div>
+            <div class="entry-sub">${e.date} · ${e.odometer.toLocaleString("en-IN")} km${e.paymentMode ? " · " + e.paymentMode : ""}</div>
           </div>
           <div class="entry-metric">
             ${metric}
