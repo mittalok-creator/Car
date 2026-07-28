@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Car Expense Tracker</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -12,83 +12,147 @@
 <div class="app">
 
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-icon">🚗</span>
-      <div>
-        <h1 id="vehicleName">My Car</h1>
-        <span class="subtitle">Expense Tracker</span>
-      </div>
-    </div>
-    <div class="google-status">
-      <span id="syncStatus" class="sync-status">Not connected</span>
-      <button id="connectGoogleBtn" class="btn btn-google">Connect Google Sheet</button>
-    </div>
+    <button class="back-btn" id="backBtn" aria-label="back">‹</button>
+    <h1>Car</h1>
+    <span id="syncDot" class="sync-dot" title="Not connected"></span>
   </header>
-
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-    <button class="tab-btn" data-tab="add">Add Expense</button>
-    <button class="tab-btn" data-tab="list">All Expenses</button>
-    <button class="tab-btn" data-tab="reminders">Reminders</button>
-    <button class="tab-btn" data-tab="settings">Settings</button>
-  </nav>
 
   <main class="content">
 
-    <!-- DASHBOARD -->
-    <section id="tab-dashboard" class="tab-panel active">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <span class="stat-label">This Month</span>
-          <span class="stat-value" id="statMonth">₹0</span>
+    <!-- HOME -->
+    <section id="page-home" class="page active">
+
+      <div class="veh-card">
+        <label class="veh-photo" for="vehiclePhotoInput">
+          <img id="vehiclePhotoImg" class="veh-photo-img hidden" alt="">
+          <span id="vehiclePhotoPlaceholder" class="veh-photo-placeholder">🚗</span>
+        </label>
+        <input type="file" id="vehiclePhotoInput" accept="image/*" class="hidden">
+        <div class="veh-info">
+          <div class="veh-name" id="vehicleName">My Car</div>
+          <div class="veh-odo" id="vehicleOdo">No readings yet</div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">This Year</span>
-          <span class="stat-value" id="statYear">₹0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Total (All Time)</span>
-          <span class="stat-value" id="statTotal">₹0</span>
-        </div>
-        <div class="stat-card">
+        <button class="icon-btn" id="editVehicleBtn" aria-label="edit">✏️</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
           <span class="stat-label">Avg Mileage</span>
           <span class="stat-value" id="statMileage">-- km/l</span>
         </div>
+        <div class="stat-box">
+          <span class="stat-label">Car Spend · Month</span>
+          <span class="stat-value" id="statMonth">₹0</span>
+        </div>
       </div>
 
-      <div id="reminderBanner" class="reminder-banner hidden"></div>
+      <div id="reminderChips" class="reminder-chips"></div>
 
-      <div class="chart-grid">
-        <div class="chart-card">
-          <h3>Category-wise Spend</h3>
-          <canvas id="categoryChart"></canvas>
-        </div>
-        <div class="chart-card">
-          <h3>Monthly Trend</h3>
-          <canvas id="monthlyChart"></canvas>
-        </div>
-        <div class="chart-card wide">
-          <h3>Fuel Efficiency (km/l)</h3>
-          <canvas id="mileageChart"></canvas>
-        </div>
+      <div class="chart-card">
+        <h3>Category-wise Spend</h3>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Monthly Trend</h3>
+        <canvas id="monthlyChart"></canvas>
       </div>
     </section>
 
-    <!-- ADD EXPENSE -->
-    <section id="tab-add" class="tab-panel">
-      <div class="form-card">
-        <h2 id="formTitle">Add Expense</h2>
-        <form id="expenseForm">
-          <input type="hidden" id="expenseId">
+    <!-- FUEL -->
+    <section id="page-fuel" class="page">
+      <div class="section-head">
+        <h2>⛽ Fuel Log</h2>
+      </div>
+
+      <form id="fuelForm" class="entry-form">
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Fill Date</label>
+            <input type="date" id="fuelDate" required>
+          </div>
+          <div class="form-row">
+            <label>Amount ₹</label>
+            <input type="number" id="fuelAmount" min="0" step="0.01" placeholder="2,000" required>
+          </div>
+          <div class="form-row">
+            <label>Price ₹/Litre</label>
+            <input type="number" id="fuelPrice" min="0" step="0.01" placeholder="e.g. 106.50" required>
+          </div>
+          <div class="form-row">
+            <label>Odometer km</label>
+            <input type="number" id="fuelOdometer" min="0" step="1" placeholder="current reading" required>
+          </div>
+        </div>
+        <p class="hint">Litres are worked out for you. Fill the tank fully each time for accurate mileage.</p>
+        <button type="submit" class="btn btn-primary btn-block">Add fuel entry</button>
+      </form>
+
+      <div id="fuelList" class="entry-list"></div>
+    </section>
+
+    <!-- SERVICE -->
+    <section id="page-service" class="page">
+      <div class="section-head">
+        <h2>🔧 Service History</h2>
+      </div>
+
+      <form id="serviceForm" class="entry-form">
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Service Date</label>
+            <input type="date" id="svcDate" required>
+          </div>
+          <div class="form-row">
+            <label>Odometer km</label>
+            <input type="number" id="svcOdometer" min="0" step="1" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Work done</label>
+          <input type="text" id="svcWork" placeholder="oil change, brakes..." required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Cost ₹</label>
+            <input type="number" id="svcCost" min="0" step="0.01" required>
+          </div>
+          <div class="form-row">
+            <label>Garage</label>
+            <input type="text" id="svcGarage" placeholder="workshop name">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Next service date <span class="hint">optional</span></label>
+            <input type="date" id="svcNextDate">
+          </div>
+          <div class="form-row">
+            <label>...or after km <span class="hint">optional</span></label>
+            <input type="number" id="svcNextKm" min="0" step="1" placeholder="e.g. 45000">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Add service record</button>
+      </form>
+
+      <div id="serviceList" class="entry-list"></div>
+    </section>
+
+    <!-- EXPENSES -->
+    <section id="page-expenses" class="page">
+      <div class="section-head">
+        <h2>💳 Other Expenses</h2>
+      </div>
+
+      <form id="expenseForm" class="entry-form">
+        <input type="hidden" id="expenseId">
+        <div class="form-grid-2">
           <div class="form-row">
             <label>Date</label>
-            <input type="date" id="fDate" required>
+            <input type="date" id="expDate" required>
           </div>
           <div class="form-row">
             <label>Category</label>
-            <select id="fCategory" required>
-              <option value="Fuel">Fuel</option>
-              <option value="Service & Maintenance">Service & Maintenance</option>
+            <select id="expCategory" required>
               <option value="Insurance">Insurance</option>
               <option value="Challan/Fine">Challan/Fine</option>
               <option value="Parking/Toll">Parking/Toll</option>
@@ -97,25 +161,19 @@
               <option value="Other">Other</option>
             </select>
           </div>
+        </div>
+        <div class="form-row">
+          <label>Description</label>
+          <input type="text" id="expDescription" placeholder="e.g. Annual premium">
+        </div>
+        <div class="form-grid-2">
           <div class="form-row">
-            <label>Amount (₹)</label>
-            <input type="number" id="fAmount" min="0" step="0.01" required>
-          </div>
-          <div class="form-row">
-            <label>Odometer (km) <span class="hint">optional, used for mileage</span></label>
-            <input type="number" id="fOdometer" min="0" step="1">
-          </div>
-          <div class="form-row">
-            <label>Litres <span class="hint">only for Fuel</span></label>
-            <input type="number" id="fLitres" min="0" step="0.01">
-          </div>
-          <div class="form-row">
-            <label>Description</label>
-            <input type="text" id="fDescription" placeholder="e.g. Full tank at Indian Oil">
+            <label>Amount ₹</label>
+            <input type="number" id="expAmount" min="0" step="0.01" required>
           </div>
           <div class="form-row">
             <label>Payment Mode</label>
-            <select id="fPayment">
+            <select id="expPayment">
               <option>Cash</option>
               <option>Card</option>
               <option>UPI</option>
@@ -123,41 +181,49 @@
               <option>Other</option>
             </select>
           </div>
-          <div class="form-row">
-            <label>Notes</label>
-            <input type="text" id="fNotes">
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Expense</button>
-            <button type="button" id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
-          </div>
-        </form>
-      </div>
-    </section>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="expenseSubmitBtn">Add expense</button>
+      </form>
 
-    <!-- LIST -->
-    <section id="tab-list" class="tab-panel">
       <div class="list-toolbar">
-        <input type="text" id="searchBox" placeholder="Search description / notes...">
+        <input type="text" id="searchBox" placeholder="Search...">
         <select id="filterCategory">
           <option value="">All Categories</option>
         </select>
-        <button id="exportCsvBtn" class="btn btn-secondary">Export CSV</button>
       </div>
-      <div class="table-wrap">
-        <table id="expenseTable">
-          <thead>
-            <tr>
-              <th>Date</th><th>Category</th><th>Description</th><th>Odometer</th><th>Amount</th><th>Payment</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="expenseTableBody"></tbody>
-        </table>
-      </div>
+      <div id="expenseList" class="entry-list"></div>
     </section>
 
-    <!-- REMINDERS -->
-    <section id="tab-reminders" class="tab-panel">
+    <!-- MORE -->
+    <section id="page-more" class="page">
+      <div class="form-card">
+        <h2>Vehicle & Sync</h2>
+        <form id="settingsForm">
+          <div class="form-row">
+            <label>Vehicle Name</label>
+            <input type="text" id="sVehicleName" placeholder="e.g. VW Taigun - DL 3C AB 1234">
+          </div>
+          <div class="form-row">
+            <label>Google OAuth Client ID <span class="hint">from Google Cloud Console</span></label>
+            <input type="text" id="sClientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
+          </div>
+          <div class="form-row">
+            <label>Google Sheet ID <span class="hint">from the Sheet's URL</span></label>
+            <input type="text" id="sSheetId" placeholder="1hnFMhNgzo7YSgNjloq6Yrod4ZgYkEmT4OXlKt-mlw74">
+          </div>
+          <button type="submit" class="btn btn-primary">Save Settings</button>
+        </form>
+        <div class="sync-actions">
+          <button id="connectGoogleBtn" class="btn btn-google">Connect Google Sheet</button>
+          <span id="syncStatus" class="sync-status">Not connected</span>
+        </div>
+        <div class="sync-actions">
+          <button id="pushBtn" class="btn btn-secondary" disabled>Push → Google Sheet</button>
+          <button id="pullBtn" class="btn btn-secondary" disabled>Pull ← Google Sheet</button>
+          <button id="exportCsvBtn" class="btn btn-secondary">Export CSV</button>
+        </div>
+      </div>
+
       <div class="form-card">
         <h2>Reminders & Renewals</h2>
         <form id="reminderForm">
@@ -169,52 +235,21 @@
             <label>PUC Expiry Date</label>
             <input type="date" id="rPuc">
           </div>
-          <div class="form-row">
-            <label>Next Service Due Date</label>
-            <input type="date" id="rServiceDate">
-          </div>
-          <div class="form-row">
-            <label>Next Service Due Km</label>
-            <input type="number" id="rServiceKm" min="0" step="1">
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Reminders</button>
-          </div>
+          <button type="submit" class="btn btn-primary">Save Reminders</button>
         </form>
-      </div>
-    </section>
-
-    <!-- SETTINGS -->
-    <section id="tab-settings" class="tab-panel">
-      <div class="form-card">
-        <h2>Settings</h2>
-        <form id="settingsForm">
-          <div class="form-row">
-            <label>Vehicle Name</label>
-            <input type="text" id="sVehicleName" placeholder="e.g. Swift - DL 3C AB 1234">
-          </div>
-          <div class="form-row">
-            <label>Google OAuth Client ID <span class="hint">from Google Cloud Console</span></label>
-            <input type="text" id="sClientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
-          </div>
-          <div class="form-row">
-            <label>Google Sheet ID <span class="hint">from the Sheet's URL</span></label>
-            <input type="text" id="sSheetId" placeholder="1hnFMhNgzo7YSgNjloq6Yrod4ZgYkEmT4OXlKt-mlw74">
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Settings</button>
-          </div>
-        </form>
-        <hr>
-        <div class="sync-actions">
-          <button id="pushBtn" class="btn btn-secondary" disabled>Push local data → Google Sheet</button>
-          <button id="pullBtn" class="btn btn-secondary" disabled>Pull data ← Google Sheet</button>
-        </div>
-        <p class="hint">See README.md for how to get the Client ID (one-time, 5 minute setup).</p>
+        <p class="hint">Next service reminder is set automatically when you add a service record.</p>
       </div>
     </section>
 
   </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home"><span>🏠</span>Home</button>
+    <button class="nav-btn" data-page="fuel"><span>⛽</span>Fuel</button>
+    <button class="nav-btn" data-page="service"><span>🔧</span>Service</button>
+    <button class="nav-btn" data-page="expenses"><span>💳</span>Expenses</button>
+    <button class="nav-btn" data-page="more"><span>⋯</span>More</button>
+  </nav>
 </div>
 
 <script src="js/store.js"></script>
