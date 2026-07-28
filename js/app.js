@@ -15,8 +15,40 @@
   const fmtMoney2 = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const todayStr = () => new Date().toISOString().slice(0, 10);
 
+  const ICON_CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  const ICON_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="m9.3 12 1.9 1.9 3.4-3.8"/></svg>';
+  const ICON_CLIPBOARD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2.3" width="6" height="3" rx="1"/><path d="m9.3 13 1.9 1.9 3.4-3.8"/></svg>';
+  const ICON_WRENCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 3.3a4 4 0 0 0-5.4 5.1L3.6 14 6 16.4l5.6-5.7a4 4 0 0 0 5.1-5.4l-2.75 2.75-2.1-2.1Z"/></svg>';
+
+  function animateNumber(el, to, opts) {
+    const { prefix = "", suffix = "", decimals = 0, duration = 700 } = opts || {};
+    const token = Symbol();
+    el.dataset.animToken = "";
+    el._animToken = token;
+    const from = 0;
+    const start = performance.now();
+    function tick(now) {
+      if (el._animToken !== token) return;
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = from + (to - from) * eased;
+      el.textContent = `${prefix}${val.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`;
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = `${prefix}${to.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`;
+    }
+    requestAnimationFrame(tick);
+  }
+
   /* ---------- Navigation ---------- */
-  document.querySelectorAll(".nav-btn").forEach((btn) => {
+  const navBtns = Array.from(document.querySelectorAll(".nav-btn"));
+
+  function moveNavIndicator(page) {
+    const idx = navBtns.findIndex((b) => b.dataset.page === page);
+    if (idx === -1) return;
+    $("navIndicator").style.transform = `translateX(${idx * 100}%)`;
+  }
+
+  navBtns.forEach((btn) => {
     btn.addEventListener("click", () => goPage(btn.dataset.page));
   });
   $("backBtn").addEventListener("click", () => {
@@ -26,13 +58,15 @@
   $("openSplitBtn").addEventListener("click", () => {
     document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === "page-split"));
     $("backBtn").classList.remove("hidden");
+    moveNavIndicator("more");
     renderSplit();
   });
 
   function goPage(page) {
-    document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
+    navBtns.forEach((b) => b.classList.toggle("active", b.dataset.page === page));
     document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === `page-${page}`));
     $("backBtn").classList.toggle("hidden", page === "home");
+    moveNavIndicator(page);
     if (page === "home") renderHome();
     if (page === "fuel") renderFuelList();
     if (page === "service") renderServiceList();
@@ -132,7 +166,7 @@
             ${metric}
             <div class="subline">${subline}</div>
           </div>
-          <button class="entry-del" onclick="AppActions.delExpense('${e.id}')">✕</button>
+          <button class="entry-del" onclick="AppActions.delExpense('${e.id}')">${ICON_CLOSE}</button>
         </div>`;
         })
         .join("") || `<div class="entry-empty">No fuel entries yet. Add your first fill-up above.</div>`;
@@ -184,7 +218,7 @@
           <div class="entry-metric">
             <span class="kmpl">${fmtMoney(e.amount)}</span>
           </div>
-          <button class="entry-del" onclick="AppActions.delExpense('${e.id}')">✕</button>
+          <button class="entry-del" onclick="AppActions.delExpense('${e.id}')">${ICON_CLOSE}</button>
         </div>`;
         })
         .join("") || `<div class="entry-empty">No service records yet.</div>`;
@@ -259,7 +293,7 @@
           <div class="entry-metric">
             <span class="kmpl">${fmtMoney(e.amount)}</span>
           </div>
-          <button class="entry-del" onclick="event.stopPropagation(); AppActions.delExpense('${e.id}')">✕</button>
+          <button class="entry-del" onclick="event.stopPropagation(); AppActions.delExpense('${e.id}')">${ICON_CLOSE}</button>
         </div>`
         )
         .join("") || `<div class="entry-empty">No expenses in this category yet.</div>`;
@@ -306,19 +340,19 @@
     const serviceKmLeft = reminders.serviceKm && lastOdo ? reminders.serviceKm - lastOdo : null;
 
     if (insuranceDays !== null && insuranceDays <= 45) {
-      chips.push({ text: insuranceDays < 0 ? "🛡️ Car insurance expired" : `🛡️ Car insurance expires in ${insuranceDays} days`, urgent: insuranceDays <= 7 });
+      chips.push({ icon: ICON_SHIELD, text: insuranceDays < 0 ? "Car insurance expired" : `Car insurance expires in ${insuranceDays} days`, urgent: insuranceDays <= 7 });
     }
     if (pucDays !== null && pucDays <= 45) {
-      chips.push({ text: pucDays < 0 ? "📋 PUC expired" : `📋 PUC expires in ${pucDays} days`, urgent: pucDays <= 7 });
+      chips.push({ icon: ICON_CLIPBOARD, text: pucDays < 0 ? "PUC expired" : `PUC expires in ${pucDays} days`, urgent: pucDays <= 7 });
     }
     if (serviceDays !== null && serviceDays <= 30) {
-      chips.push({ text: serviceDays < 0 ? "🔧 Service overdue" : `🔧 Service due in ${serviceDays} days`, urgent: serviceDays <= 7 });
+      chips.push({ icon: ICON_WRENCH, text: serviceDays < 0 ? "Service overdue" : `Service due in ${serviceDays} days`, urgent: serviceDays <= 7 });
     }
     if (serviceKmLeft !== null && serviceKmLeft <= 1000) {
-      chips.push({ text: `🔧 Service due in ${Math.max(0, serviceKmLeft).toLocaleString("en-IN")} km`, urgent: serviceKmLeft <= 200 });
+      chips.push({ icon: ICON_WRENCH, text: `Service due in ${Math.max(0, serviceKmLeft).toLocaleString("en-IN")} km`, urgent: serviceKmLeft <= 200 });
     }
 
-    $("reminderChips").innerHTML = chips.map((c) => `<div class="reminder-chip ${c.urgent ? "urgent" : ""}">${c.text}</div>`).join("");
+    $("reminderChips").innerHTML = chips.map((c) => `<div class="reminder-chip ${c.urgent ? "urgent" : ""}">${c.icon}<span>${c.text}</span></div>`).join("");
   }
 
   /* ---------- Home dashboard ---------- */
@@ -336,9 +370,13 @@
     renderVehicleCard();
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    $("statMonth").textContent = fmtMoney(sumInRange(monthStart));
+    animateNumber($("statMonth"), sumInRange(monthStart), { prefix: "₹" });
     const avg = avgMileage();
-    $("statMileage").textContent = avg ? `${avg} km/l` : "-- km/l";
+    if (avg) {
+      animateNumber($("statMileage"), avg, { decimals: 1, suffix: " km/l" });
+    } else {
+      $("statMileage").textContent = "-- km/l";
+    }
     renderReminderChips();
     renderCharts();
   }
@@ -364,20 +402,59 @@
       if (key in monthTotals) monthTotals[key] += Number(e.amount || 0);
     });
 
-    const palette = ["#5b5fef", "#1fa971", "#c8770a", "#e0384a", "#8b5cf6", "#0ea5b8", "#db2777", "#65a30d"];
+    const isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const palette = isDark
+      ? ["#8b78f8", "#35d191", "#f3a83f", "#ff6b7f", "#b3a2fa", "#22d3ee", "#f472b6", "#a3e635"]
+      : ["#6952f0", "#0da96e", "#c9740a", "#e5384f", "#a996f7", "#0ea5b8", "#db2777", "#65a30d"];
+    const textColor = isDark ? "#a5a2bb" : "#6c6a80";
+    const gridColor = isDark ? "rgba(245,244,250,0.06)" : "rgba(18,17,28,0.06)";
+    const tooltipBg = isDark ? "#1c1b28" : "#ffffff";
+    const tooltipBorder = isDark ? "#2a2938" : "#e7e5f2";
+    Chart.defaults.font.family = "Inter, -apple-system, sans-serif";
+
+    const tooltipStyle = {
+      backgroundColor: tooltipBg,
+      titleColor: isDark ? "#f5f4fa" : "#12111c",
+      bodyColor: textColor,
+      borderColor: tooltipBorder,
+      borderWidth: 1,
+      padding: 10,
+      cornerRadius: 10,
+      titleFont: { size: 12, weight: "700" },
+      bodyFont: { size: 12, weight: "600" },
+      displayColors: true,
+      boxWidth: 8,
+      boxHeight: 8,
+      usePointStyle: true,
+      caretSize: 5,
+    };
 
     if (categoryChart) categoryChart.destroy();
     categoryChart = new Chart($("categoryChart"), {
       type: "doughnut",
-      data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: palette }] },
-      options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } } },
+      data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: palette, borderWidth: 0, spacing: 3, borderRadius: 6, hoverOffset: 6 }] },
+      options: {
+        cutout: "70%",
+        animation: { animateRotate: true, duration: 700, easing: "easeOutCubic" },
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, padding: 14, font: { size: 11, weight: "600" }, color: textColor } },
+          tooltip: { ...tooltipStyle, callbacks: { label: (ctx) => ` ${ctx.label}: ${fmtMoney(ctx.parsed)}` } },
+        },
+      },
     });
 
     if (monthlyChart) monthlyChart.destroy();
     monthlyChart = new Chart($("monthlyChart"), {
       type: "bar",
-      data: { labels: Object.keys(monthTotals), datasets: [{ label: "Spend", data: Object.values(monthTotals), backgroundColor: "#5b5fef" }] },
-      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+      data: { labels: Object.keys(monthTotals), datasets: [{ label: "Spend", data: Object.values(monthTotals), backgroundColor: isDark ? "#8b78f8" : "#6952f0", borderRadius: 6, maxBarThickness: 22 }] },
+      options: {
+        animation: { duration: 600, easing: "easeOutCubic" },
+        plugins: { legend: { display: false }, tooltip: { ...tooltipStyle, callbacks: { label: (ctx) => ` ${fmtMoney(ctx.parsed.y)}` } } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, border: { display: false }, ticks: { color: textColor, font: { size: 10.5 }, callback: (v) => `₹${v >= 1000 ? v / 1000 + "k" : v}` } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { size: 10.5 } } },
+        },
+      },
     });
   }
 
