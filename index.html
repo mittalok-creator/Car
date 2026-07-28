@@ -104,6 +104,10 @@
           </div>
         </div>
         <p class="hint">Litres are worked out for you. Fill the tank fully each time for accurate mileage.</p>
+        <div class="form-row">
+          <label>Notes <span class="hint">optional</span></label>
+          <input type="text" id="fuelNotes" placeholder="e.g. before highway trip">
+        </div>
         <button type="submit" class="btn btn-primary btn-block">Add fuel entry</button>
       </form>
 
@@ -151,6 +155,10 @@
             <label>...or after km <span class="hint">optional</span></label>
             <input type="number" id="svcNextKm" min="0" step="1" placeholder="e.g. 45000">
           </div>
+        </div>
+        <div class="form-row">
+          <label>Notes <span class="hint">optional</span></label>
+          <input type="text" id="svcNotes" placeholder="e.g. under warranty">
         </div>
         <button type="submit" class="btn btn-primary btn-block">Add service record</button>
       </form>
@@ -203,6 +211,10 @@
               <option>Other</option>
             </select>
           </div>
+        </div>
+        <div class="form-row">
+          <label>Notes <span class="hint">optional</span></label>
+          <input type="text" id="expNotes" placeholder="e.g. shared with office carpool">
         </div>
         <button type="submit" class="btn btn-primary btn-block" id="expenseSubmitBtn">Add expense</button>
       </form>

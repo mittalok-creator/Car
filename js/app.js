@@ -122,7 +122,7 @@
       odometer: Number($("fuelOdometer").value || 0),
       description: "Fuel fill-up",
       paymentMode: $("fuelPayment").value,
-      notes: "",
+      notes: $("fuelNotes").value.trim(),
     });
     expenses = Store.loadExpenses();
     $("fuelForm").reset();
@@ -161,6 +161,7 @@
           <div class="entry-main">
             <div class="entry-title">${fmtMoney(e.amount)} · ${e.litres} L</div>
             <div class="entry-sub">${e.date} · ${e.odometer.toLocaleString("en-IN")} km${e.paymentMode ? " · " + e.paymentMode : ""}</div>
+            ${e.notes ? `<div class="entry-sub">${e.notes}</div>` : ""}
           </div>
           <div class="entry-metric">
             ${metric}
@@ -187,7 +188,7 @@
       nextServiceDate: nextDate || undefined,
       nextServiceKm: nextKm,
       paymentMode: "",
-      notes: "",
+      notes: $("svcNotes").value.trim(),
     });
     expenses = Store.loadExpenses();
     if (nextDate || nextKm) {
@@ -214,6 +215,7 @@
             <div class="entry-title">${e.description || "Service"}</div>
             <div class="entry-sub">${e.date} · ${(e.odometer || 0).toLocaleString("en-IN")} km${e.garage ? " · " + e.garage : ""}</div>
             ${nextBits.length ? `<div class="entry-sub">${nextBits.join(" · ")}</div>` : ""}
+            ${e.notes ? `<div class="entry-sub">${e.notes}</div>` : ""}
           </div>
           <div class="entry-metric">
             <span class="kmpl">${fmtMoney(e.amount)}</span>
@@ -233,7 +235,7 @@
       description: $("expDescription").value.trim(),
       amount: Number($("expAmount").value || 0),
       paymentMode: $("expPayment").value,
-      notes: "",
+      notes: $("expNotes").value.trim(),
     };
     if (editingExpenseId) {
       Store.updateExpense(editingExpenseId, payload);
@@ -261,6 +263,7 @@
     $("expDescription").value = exp.description || "";
     $("expAmount").value = exp.amount ?? "";
     $("expPayment").value = exp.paymentMode || "Cash";
+    $("expNotes").value = exp.notes || "";
     $("expenseSubmitBtn").textContent = "Save changes";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -289,6 +292,7 @@
           <div class="entry-main">
             <div class="entry-title">${e.description || e.category}</div>
             <div class="entry-sub">${e.category} · ${e.date}${e.paymentMode ? " · " + e.paymentMode : ""}</div>
+            ${e.notes ? `<div class="entry-sub">${e.notes}</div>` : ""}
           </div>
           <div class="entry-metric">
             <span class="kmpl">${fmtMoney(e.amount)}</span>
