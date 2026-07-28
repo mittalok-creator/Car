@@ -80,10 +80,12 @@
     return Math.max(...withOdo.map((e) => e.odometer));
   }
 
+  const DEFAULT_VEHICLE_NAME = "Volkswagen Taigun (2024) · UP81DE4446";
+
   function renderVehicleCard() {
-    $("vehicleName").textContent = settings.vehicleName || "My Car";
+    $("vehicleName").textContent = settings.vehicleName || DEFAULT_VEHICLE_NAME;
     const odo = getLatestOdometer();
-    $("vehicleOdo").textContent = odo ? `${odo.toLocaleString("en-IN")} km on the clock` : "No readings yet";
+    $("vehicleOdoValue").textContent = odo ? odo.toLocaleString("en-IN") : "--";
     if (settings.vehiclePhoto) {
       $("vehiclePhotoImg").src = settings.vehiclePhoto;
       $("vehiclePhotoImg").classList.remove("hidden");
@@ -106,6 +108,11 @@
     };
     reader.readAsDataURL(file);
   });
+
+  document.querySelectorAll(".qa-btn[data-page]").forEach((btn) => {
+    btn.addEventListener("click", () => goPage(btn.dataset.page));
+  });
+  $("quickSplitBtn").addEventListener("click", () => $("openSplitBtn").click());
 
   /* ---------- Fuel ---------- */
   $("fuelForm").addEventListener("submit", (e) => {
@@ -464,7 +471,7 @@
 
   /* ---------- Settings & Google sync ---------- */
   function fillSettingsForm() {
-    $("sVehicleName").value = settings.vehicleName || "";
+    $("sVehicleName").value = settings.vehicleName || DEFAULT_VEHICLE_NAME;
     $("sClientId").value = settings.clientId || "";
     $("sSheetId").value = settings.sheetId || "";
   }
