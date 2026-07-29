@@ -436,7 +436,10 @@ const inr2 = n => "₹" + n.toLocaleString("en-IN",{minimumFractionDigits:2,maxi
 const km = n => Math.round(n).toLocaleString("en-IN");
 const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 const parse = s => new Date(s + "T00:00:00");
-const fmtDate = s => parse(s).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+const fmtDate = s => {
+  const d = parse(s);
+  return String(d.getDate()).padStart(2,"0") + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
+};
 const daysUntil = s => Math.ceil((parse(s) - new Date(new Date().toDateString())) / 86400000);
 const uid = () => Math.random().toString(36).slice(2,10);
 
