@@ -403,8 +403,8 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
   </div>
 
   <button class="btn ghost" id="btn-csv">Export everything as CSV</button>
-  <button class="btn quiet" id="btn-reset">Reset to sample data</button>
-  <p class="hint">Sample data covers Aug 2025 – Jul 2026 for a Volkswagen Taigun on UP81DE4446. Everything you add is saved to this browser.</p>
+  <button class="btn quiet" id="btn-reset">Clear all data</button>
+  <p class="hint">Everything you add is saved to this browser only — nothing is sent anywhere.</p>
 </section>
 
 </div>
@@ -440,59 +440,15 @@ const fmtDate = s => parse(s).toLocaleDateString("en-IN",{day:"numeric",month:"s
 const daysUntil = s => Math.ceil((parse(s) - new Date(new Date().toDateString())) / 86400000);
 const uid = () => Math.random().toString(36).slice(2,10);
 
-/* ---------- seed data ---------- */
+/* ---------- blank starting state ---------- */
 function seed(){
-  const fuel = [
-    ["2025-08-12",2000,96.20,18420,"UPI","IOCL, Sikandra"],
-    ["2025-09-03",2500,97.10,18795,"FASTag","HP, NH-19"],
-    ["2025-09-27",2200,98.40,19120,"UPI",""],
-    ["2025-10-19",3000,99.00,19565,"Card","Highway run to Delhi"],
-    ["2025-11-08",2400,98.20,19900,"UPI",""],
-    ["2025-12-02",2800,97.60,20310,"UPI","IOCL, Sikandra"],
-    ["2025-12-28",3200,96.80,20780,"Card","Winter trip"],
-    ["2026-01-21",2600,98.90,21150,"UPI",""],
-    ["2026-02-14",3000,100.20,21590,"UPI",""],
-    ["2026-03-09",2500,101.10,21955,"Cash",""],
-    ["2026-04-04",3400,102.30,22455,"Card","Full tank before Jaipur"],
-    ["2026-05-06",2800,103.00,22855,"UPI",""],
-    ["2026-06-11",3000,103.40,23290,"UPI","IOCL, Sikandra"],
-    ["2026-07-08",2600,102.60,23660,"UPI",""],
-    ["2026-07-24",2200,102.90,23975,"UPI",""]
-  ].map(([date,amount,ppl,odo,mode,notes])=>({
-    id:uid(),date,category:"Fuel",amount,pricePerLitre:ppl,litres:+(amount/ppl).toFixed(3),
-    odometer:odo,paymentMode:mode,notes,description:"Fuel fill-up"
-  }));
-
-  const service = [
-    {id:uid(),date:"2025-11-22",category:"Service & Maintenance",amount:8450,odometer:20000,
-     description:"Periodic service — 20,000 km",garage:"Volkswagen Agra",nextServiceKm:25000},
-    {id:uid(),date:"2026-03-14",category:"Service & Maintenance",amount:6200,odometer:21980,
-     description:"Front brake pads + wheel alignment",garage:"Sharma Auto Works, Agra",nextServiceDate:"2026-08-22"}
-  ];
-
-  const other = [
-    {id:uid(),date:"2025-08-30",category:"Insurance",amount:18240,description:"Comprehensive renewal — ICICI Lombard",paymentMode:"Card"},
-    {id:uid(),date:"2025-10-04",category:"Accessories",amount:3600,description:"Rubber floor mats + boot tray",paymentMode:"UPI"},
-    {id:uid(),date:"2025-11-01",category:"Parking/Toll",amount:1000,description:"FASTag recharge",paymentMode:"UPI"},
-    {id:uid(),date:"2026-01-11",category:"Challan/Fine",amount:1000,description:"Over-speeding, Yamuna Expressway",paymentMode:"UPI"},
-    {id:uid(),date:"2026-02-01",category:"Parking/Toll",amount:1000,description:"FASTag recharge",paymentMode:"UPI"},
-    {id:uid(),date:"2026-04-20",category:"Accessories",amount:2800,description:"Dashcam install",paymentMode:"Card"},
-    {id:uid(),date:"2026-05-01",category:"Parking/Toll",amount:1000,description:"FASTag recharge",paymentMode:"FASTag"},
-    {id:uid(),date:"2026-06-05",category:"Other",amount:950,description:"Wash + interior detail",paymentMode:"Cash"},
-    {id:uid(),date:"2026-07-02",category:"Parking/Toll",amount:1000,description:"FASTag recharge",paymentMode:"FASTag"}
-  ];
-  for(let i=0;i<12;i++){
-    const d = new Date(2025,7+i,5);
-    other.push({id:uid(),date:iso(d),category:"EMI/Loan",amount:18650,description:"Car loan EMI",paymentMode:"Card"});
-  }
-
   return {
-    expenses:[...fuel,...service,...other],
+    expenses:[],
     vehicle:{vehicleName:"Volkswagen Taigun (2024)",plate:"UP81DE4446"},
-    reminders:{insuranceExpiry:"2026-08-29",pucExpiry:"2026-08-06"},
-    split:{month:iso(new Date()).slice(0,7),workingDays:26,runDays:23,mileage:13,petrolPrice:103,
+    reminders:{insuranceExpiry:"",pucExpiry:""},
+    split:{month:iso(new Date()).slice(0,7),workingDays:23,runDays:23,mileage:13,petrolPrice:103,
       kmPerDay:80,maintenancePerDay:50,tollPerMonth:360,
-      names:["Aman","Priya","Rahul","Sneha","Vikram"]}
+      names:[]}
   };
 }
 
@@ -500,12 +456,12 @@ function seed(){
 let state = seed();
 async function load(){
   try{
-    const r = await window.storage.get(KEY);
-    if(r && r.value) state = JSON.parse(r.value);
-  }catch(e){ /* first run or storage unavailable — sample data stands */ }
+    const raw = localStorage.getItem(KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){ /* first run or storage unavailable — blank state stands */ }
 }
 async function save(){
-  try{ await window.storage.set(KEY, JSON.stringify(state)); }
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
   catch(e){ toast("Saved for this session only"); }
 }
 
@@ -1077,7 +1033,11 @@ function bindMore(){
     toast("CSV exported");
   });
   $("#btn-reset").addEventListener("click", async ()=>{
-    state = seed(); await save(); bindSplitValues(); renderAll(); toast("Sample data restored");
+    if(!confirm("Delete every fuel, service, and expense entry? This can't be undone.")) return;
+    const keepVehicle = state.vehicle;
+    state = seed();
+    state.vehicle = keepVehicle;
+    await save(); bindSplitValues(); renderAll(); toast("All data cleared");
   });
 }
 function bindSplitValues(){

@@ -48,9 +48,10 @@ toll, 23 run-days, 5 riders → ₹699.50/day, ₹16,088.46/month, ₹3,218/head
 
 ## Data
 
-Everything is stored in the browser. Nothing is sent anywhere; there is no
-backend and no account. "Reset to sample data" in More restores the demo
-records (Aug 2025 – Jul 2026). CSV export is on the same screen.
+Everything is stored in the browser via `localStorage`. Nothing is sent
+anywhere; there is no backend and no account. The app starts empty —
+"Clear all data" in More wipes every entry (with a confirmation) if you
+ever want a clean slate. CSV export is on the same screen.
 
 ## Stack
 
