@@ -6,7 +6,7 @@
 <title>Drive — Volkswagen Taigun · UP81DE4446</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <style>
 :root{
   --canvas:#E9E9EE; --surface:#FFFFFF; --surface-2:#F4F4F7; --stage:#FFFFFF;
@@ -941,32 +941,23 @@ const RECEIPT_ICONS = {
   calCheck:"M6 4.5h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z M5 9.5h14 M8 2.5v4 M16 2.5v4 M9 14l2 2 4-4",
   road:    "M8.2 3 4.2 21 M15.8 3l4 18 M11 7.5v3 M11.4 14v3",
   fuel:    "M12 3s6 6.7 6 10.8A6 6 0 0 1 6 13.8C6 9.7 12 3 12 3Z",
-  wrench:  "M14.7 3.3a4 4 0 0 0-5.4 5.1L3.6 14 6 16.4l5.6-5.7a4 4 0 0 0 5.1-5.4l-2.75 2.75-2.1-2.1Z",
-  star:    "M12 2.5l2.7 6 6.5.6-4.9 4.4 1.4 6.4L12 16.8l-5.7 3.1 1.4-6.4-4.9-4.4 6.5-.6Z"
+  wrench:  "M14.7 3.3a4 4 0 0 0-5.4 5.1L3.6 14 6 16.4l5.6-5.7a4 4 0 0 0 5.1-5.4l-2.75 2.75-2.1-2.1Z"
 };
-function drawReceiptIcon(ctx, key, cx, cy, size, color){
+function drawReceiptIcon(ctx, key, cx, cy, size, color, weight){
   const p = new Path2D(RECEIPT_ICONS[key]);
   ctx.save();
   ctx.translate(cx - size/2, cy - size/2);
   ctx.scale(size/24, size/24);
-  ctx.strokeStyle = color; ctx.lineWidth = 2.1;
+  ctx.strokeStyle = color; ctx.lineWidth = weight || 1.6;
   ctx.lineJoin = "round"; ctx.lineCap = "round";
   ctx.stroke(p);
   ctx.restore();
 }
-function fillReceiptIcon(ctx, key, cx, cy, size, color){
-  const p = new Path2D(RECEIPT_ICONS[key]);
+function drawReceiptCoin(ctx, cx, cy, size, color){
   ctx.save();
-  ctx.translate(cx - size/2, cy - size/2);
-  ctx.scale(size/24, size/24);
-  ctx.fillStyle = color;
-  ctx.fill(p);
-  ctx.restore();
-}
-function drawReceiptCoin(ctx, cx, cy, size, bg, fg){
-  ctx.save();
-  ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fillStyle = bg; ctx.fill();
-  ctx.fillStyle = fg; ctx.font = "800 " + Math.round(size*0.5) + "px system-ui,sans-serif";
+  ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2);
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = color; ctx.font = "600 " + Math.round(size*0.5) + "px system-ui,sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText("₹", cx, cy+1);
   ctx.textBaseline = "alphabetic";
@@ -982,96 +973,6 @@ function roundRectPath(x0,y0,w,h,r){
   p.closePath();
   return p;
 }
-function drawConfetti(ctx, x0, y0, w, h, count, colors, seedBase){
-  ctx.save();
-  for(let n=0;n<count;n++){
-    const rx = (Math.sin((seedBase+n)*12.9898)*43758.5453) % 1;
-    const ry = (Math.sin((seedBase+n)*78.233)*43758.5453) % 1;
-    const rs = (Math.sin((seedBase+n)*37.719)*43758.5453) % 1;
-    const px = x0 + Math.abs(rx)*w, py = y0 + Math.abs(ry)*h;
-    const col = colors[n % colors.length];
-    const size = 2 + Math.abs(rs)*3;
-    ctx.globalAlpha = .55 + Math.abs(rs)*.3;
-    ctx.fillStyle = col;
-    if(n % 3 === 0){
-      ctx.save(); ctx.translate(px,py); ctx.rotate(rs*6.28);
-      ctx.fillRect(-size/2,-size/2,size,size);
-      ctx.restore();
-    } else {
-      ctx.beginPath(); ctx.arc(px,py,size/2,0,Math.PI*2); ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-function drawScallopRow(ctx, x0, y0, w, r, color){
-  ctx.save();
-  ctx.fillStyle = color;
-  let xx = x0 + r;
-  while(xx < x0 + w - r*0.3){
-    ctx.beginPath(); ctx.arc(xx, y0, r, 0, Math.PI*2); ctx.fill();
-    xx += r*1.9;
-  }
-  ctx.restore();
-}
-function drawMascot(ctx, cx, cy, w, bodyColor){
-  const bodyW = w, bodyH = w*0.5, roofW = w*0.56, roofH = w*0.3;
-  ctx.save();
-  ctx.fillStyle = bodyColor;
-  ctx.fill(roundRectPath(cx-roofW/2, cy-bodyH/2-roofH*0.72, roofW, roofH, roofH*0.5));
-  ctx.fill(roundRectPath(cx-bodyW/2, cy-bodyH/2, bodyW, bodyH, bodyH*0.46));
-  const wheelR = bodyW*0.13, wheelY = cy+bodyH*0.4;
-  [cx-bodyW*0.27, cx+bodyW*0.27].forEach(wx=>{
-    ctx.beginPath(); ctx.arc(wx, wheelY, wheelR, 0, Math.PI*2); ctx.fillStyle = "#2B2740"; ctx.fill();
-    ctx.beginPath(); ctx.arc(wx, wheelY, wheelR*0.4, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill();
-  });
-  const eyeR = w*0.1, eyeY = cy-bodyH*0.08, eyeDX = w*0.15;
-  [cx-eyeDX, cx+eyeDX].forEach(ex=>{
-    ctx.beginPath(); ctx.arc(ex, eyeY, eyeR, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill();
-    ctx.beginPath(); ctx.arc(ex+eyeR*0.25, eyeY+eyeR*0.2, eyeR*0.45, 0, Math.PI*2); ctx.fillStyle = "#221F30"; ctx.fill();
-  });
-  ctx.beginPath();
-  ctx.arc(cx, eyeY+eyeR*1.5, w*0.16, 0.15*Math.PI, 0.85*Math.PI);
-  ctx.strokeStyle = "#221F30"; ctx.lineWidth = w*0.035; ctx.lineCap = "round"; ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx+roofW*0.18, cy-bodyH/2-roofH*0.6);
-  ctx.lineTo(cx+roofW*0.32, cy-bodyH/2-roofH*1.5);
-  ctx.strokeStyle = bodyColor; ctx.lineWidth = w*0.03; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx+roofW*0.32, cy-bodyH/2-roofH*1.5, w*0.035, 0, Math.PI*2);
-  ctx.fillStyle = bodyColor; ctx.fill();
-  ctx.restore();
-}
-function measureOdometer(ctx, str, h){
-  const tileH = h, tileW = h*0.66, gap = h*0.09;
-  let total = 0;
-  const font = '800 ' + Math.round(h*0.58) + 'px system-ui,sans-serif';
-  ctx.save(); ctx.font = font;
-  for(const ch of str){
-    if(/[0-9]/.test(ch)) total += tileW + gap;
-    else total += ctx.measureText(ch).width*1.15 + gap;
-  }
-  ctx.restore();
-  return { total, tileW, tileH, gap, font };
-}
-function drawOdometer(ctx, str, cx, y, h, tileColor, textColor, plainColor){
-  const m = measureOdometer(ctx, str, h);
-  let x = cx - m.total/2;
-  ctx.save();
-  ctx.font = m.font; ctx.textBaseline = "middle";
-  for(const ch of str){
-    if(/[0-9]/.test(ch)){
-      ctx.fillStyle = tileColor; ctx.fill(roundRectPath(x, y, m.tileW, m.tileH, h*0.16));
-      ctx.fillStyle = textColor; ctx.textAlign = "center";
-      ctx.fillText(ch, x+m.tileW/2, y+m.tileH/2+1);
-      x += m.tileW + m.gap;
-    } else {
-      ctx.fillStyle = plainColor; ctx.textAlign = "left";
-      ctx.fillText(ch, x, y+m.tileH/2+1);
-      x += ctx.measureText(ch).width*1.15 + m.gap;
-    }
-  }
-  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  ctx.restore();
-}
 function loadCarFrame(){
   return new Promise(resolve=>{
     const src = document.querySelector('#stage img[alt*="45 degrees"]') || document.querySelector('#stage img');
@@ -1085,19 +986,22 @@ function loadCarFrame(){
 async function loadReceiptFont(){
   try{
     await Promise.all([
-      document.fonts.load('800 44px "Baloo 2"'),
-      document.fonts.load('700 18px "Baloo 2"'),
-      document.fonts.load('600 14px "Baloo 2"')
+      document.fonts.load('600 40px "Fraunces"'),
+      document.fonts.load('600 20px "Fraunces"'),
+      document.fonts.load('500 15px "Fraunces"')
     ]);
   }catch(e){}
 }
 async function shareReceipt(){
   const i = splitInputs(), r = computeSplit(i);
   await loadReceiptFont();
-  const BALOO = (w,px) => w + ' ' + px + 'px "Baloo 2",system-ui,sans-serif';
-  const F = w => w + ' 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  const SERIF = (w,px) => w + ' ' + px + 'px "Fraunces",Georgia,serif';
+  const F = w => w + ' 14.5px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 
-  const W = 680, M = 30, R = 32, pad = 36, rowH = 62, rowGap = 10;
+  const IVORY="#FAF6EE", CARD="#FFFFFF", INK="#241F1A", INK_SOFT="#8A8171",
+        RULE="#E7E1D3", ACCENT="#2B4F3D", ACCENT_TINT="#E9F1EC";
+
+  const W = 620, M = 34, R = 20, pad = 42, rowH = 56;
   const rows = [
     ["Month", parse(i.month + "-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), "cal"],
     ["Working days", String(i.workingDays), "calCheck"],
@@ -1108,13 +1012,12 @@ async function shareReceipt(){
     ["Petrol used", r.fuelPerDay.toFixed(2) + " L/day", "fuel"],
     ["Fuel cost", inr2(r.fuelCostPerDay) + "/day", "coin"],
     ["Maintenance", inr2(i.maintenancePerDay) + "/day", "wrench"],
-    ["Toll", inr2(r.tollPerDay) + "/day (" + inr(i.tollPerMonth) + "/mo)", "road"],
-    ["Full daily cost", inr2(r.fullDailyCost), "star"]
+    ["Toll", inr2(r.tollPerDay) + "/day (" + inr(i.tollPerMonth) + "/mo)", "road"]
   ];
 
-  const headerH = 250, badgeH = 168, listH = rows.length*(rowH+rowGap), totalH = 118, footerH = 300;
-  const gap = 22;
-  const cardH = headerH + gap + badgeH + gap + listH + totalH + footerH;
+  const headerH = 260, statH = 92, listH = rows.length*rowH, fdcH = 62, totalH = 116, footerH = 190;
+  const gap = 30;
+  const cardH = headerH + gap + statH + gap + listH + fdcH + totalH + gap + footerH;
   const H = cardH + M*2;
   const CW = W + M*2;
 
@@ -1124,173 +1027,133 @@ async function shareReceipt(){
   c.width = CW*2; c.height = H*2;
   const x = c.getContext("2d"); x.scale(2,2);
 
-  x.fillStyle = "#FFF7EC"; x.fillRect(0,0,CW,H);
+  x.fillStyle = IVORY; x.fillRect(0,0,CW,H);
 
   const card = roundRectPath(M, M, W, cardH, R);
   x.save();
-  x.shadowColor = "rgba(60,30,20,.22)"; x.shadowBlur = 44; x.shadowOffsetY = 18;
-  x.fillStyle = "#FFFDF8"; x.fill(card);
+  x.shadowColor = "rgba(40,34,20,.12)"; x.shadowBlur = 34; x.shadowOffsetY = 14;
+  x.fillStyle = CARD; x.fill(card);
   x.restore();
   x.save(); x.clip(card);
 
   const ox = M, oy = M;
-  const CORAL="#FF6B54", CORAL_D="#D6432D", YELLOW="#FFC93C", YELLOW_D="#B8790A",
-        TEAL="#00BFA6", TEAL_D="#00806E", SKY="#3DA5FF", SKY_D="#1D6FC4",
-        GRAPE="#8B5CF6", GRAPE_D="#5B34C9", INK="#241F33";
 
-  /* ---------- header: ticket band ---------- */
-  x.fillStyle = CORAL; x.fillRect(ox,oy,W,headerH);
-  drawConfetti(x, ox, oy, W, headerH, 26, ["#FFFFFF","#FFE28A","#FFFFFF"], 4.2);
-  x.fillStyle = "#FFF7EC";
-  x.beginPath(); x.arc(ox, oy+headerH-26, 15, 0, Math.PI*2); x.fill();
-  x.beginPath(); x.arc(ox+W, oy+headerH-26, 15, 0, Math.PI*2); x.fill();
-
-  x.save();
-  x.translate(ox+pad+64, oy+34); x.rotate(-0.07);
-  const stampTxt = "MONTHLY CAR EXPENSES";
-  x.font = BALOO(700,13);
-  const stampW = x.measureText(stampTxt).width + 34;
-  const stampPath = roundRectPath(-stampW/2, -15, stampW, 30, 15);
-  x.strokeStyle = "rgba(255,255,255,.85)"; x.lineWidth = 1.6; x.setLineDash([3,3]); x.stroke(stampPath); x.setLineDash([]);
-  x.fillStyle = "#fff"; x.textAlign = "center";
-  x.fillText(stampTxt, 0, 4);
+  /* ---------- header ---------- */
+  x.fillStyle = ACCENT; x.font = '600 12px system-ui,sans-serif';
+  x.save(); x.translate(ox+pad, oy+40);
+  const label = "MONTHLY CAR EXPENSES";
+  let lx = 0;
+  for(const ch of label){ x.fillText(ch, lx, 0); lx += x.measureText(ch).width + 1.6; }
   x.restore();
 
-  x.fillStyle = "#fff"; x.font = BALOO(800,44); x.textAlign = "left";
-  x.fillText(parse(i.month+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), ox+pad, oy+108);
-  x.fillStyle = "rgba(255,255,255,.92)"; x.font = BALOO(600,18);
-  x.fillText(state.vehicle.vehicleName, ox+pad, oy+140);
+  x.fillStyle = INK; x.font = SERIF(600,42);
+  x.fillText(parse(i.month+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), ox+pad, oy+94);
+  x.fillStyle = ACCENT; x.font = SERIF(500,19);
+  x.fillText(state.vehicle.vehicleName, ox+pad, oy+124);
 
-  x.save();
-  x.translate(ox+pad+108, oy+192); x.rotate(-0.035);
   const plateTxt = state.vehicle.plate || "";
-  x.font = '800 20px system-ui,sans-serif';
+  x.font = '600 18px system-ui,sans-serif';
   const numW = x.measureText(plateTxt).width;
-  const chipW=44, numPad=16, pw = chipW+numPad*2+numW, ph=44;
-  const plateBg = roundRectPath(-pw/2,-ph/2,pw,ph,10);
-  x.fillStyle="#fff"; x.fill(plateBg);
-  x.strokeStyle="#E7E2D8"; x.lineWidth=1.5; x.stroke(plateBg);
-  x.save(); x.clip(plateBg);
-  x.fillStyle=SKY_D; x.fillRect(-pw/2,-ph/2,chipW,ph);
-  x.restore();
-  x.fillStyle="rgba(255,255,255,.92)"; x.font='700 9px system-ui,sans-serif'; x.textAlign="center";
-  x.fillText("IND", -pw/2+chipW/2, 3);
-  x.fillStyle=INK; x.font='800 20px system-ui,sans-serif'; x.textAlign="left";
-  x.fillText(plateTxt, -pw/2+chipW+numPad, 7);
-  x.restore();
+  const chipW=38, numPad=16, ph=40, pw = chipW+numPad*2+numW;
+  const plateY = oy+148;
+  const plateBg = roundRectPath(ox+pad, plateY, pw, ph, 8);
+  x.strokeStyle = RULE; x.lineWidth = 1.4; x.stroke(plateBg);
+  x.strokeStyle = ACCENT; x.lineWidth = 1.4;
+  x.beginPath(); x.moveTo(ox+pad+chipW, plateY+6); x.lineTo(ox+pad+chipW, plateY+ph-6); x.stroke();
+  x.fillStyle = ACCENT; x.font = '600 9px system-ui,sans-serif'; x.textAlign = "center";
+  x.fillText("IND", ox+pad+chipW/2, plateY+ph/2+3);
+  x.fillStyle = INK; x.font = '700 18px system-ui,sans-serif'; x.textAlign = "left";
+  x.fillText(plateTxt, ox+pad+chipW+numPad, plateY+ph/2+6);
 
   if(carImg){
-    const cw = 150, ch = cw*(carImg.height/carImg.width);
-    x.save();
-    x.globalAlpha=.85;
-    x.drawImage(carImg, ox+W-cw-22, oy+headerH-ch-18, cw, ch);
-    x.restore();
-  } else {
-    drawMascot(x, ox+W-90, oy+headerH-84, 92, "#fff");
+    const cw = 210, ch = cw*(carImg.height/carImg.width);
+    const cx0 = ox+W-cw-pad, cy0 = oy+headerH-ch-30;
+    x.drawImage(carImg, cx0, cy0, cw, ch);
+    x.strokeStyle = RULE; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(cx0-10, cy0+ch+14); x.lineTo(cx0+cw+10, cy0+ch+14); x.stroke();
   }
+
+  x.strokeStyle = RULE; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(ox+pad, oy+headerH); x.lineTo(ox+W-pad, oy+headerH); x.stroke();
 
   let y = oy + headerH + gap;
 
-  /* ---------- badge row ---------- */
-  const badges = [
-    { label:"THIS MONTH KM RUN", value: km(i.kmPerDay*i.runDays)+" km", color: TEAL, icon:"road" },
-    { label:"MONTHLY COST", value: inr2(r.totalMonthly), color: CORAL, icon:"coin" },
-    { label:"MILEAGE", value: i.mileage+" km/L", color: YELLOW, icon:"fuel" }
+  /* ---------- stat strip ---------- */
+  const stats = [
+    ["THIS MONTH", km(i.kmPerDay*i.runDays)+" km"],
+    ["MONTHLY COST", inr2(r.totalMonthly)],
+    ["MILEAGE", i.mileage+" km/L"]
   ];
-  const colW = W/3, medalR = 62, roadY = y + badgeH - 30;
-  x.strokeStyle = "#EADFCB"; x.lineWidth = 3; x.setLineDash([2,10]); x.lineCap="round";
-  x.beginPath(); x.moveTo(ox+colW*0.5, roadY); x.lineTo(ox+colW*2.5, roadY); x.stroke(); x.setLineDash([]);
-
-  badges.forEach((b,idx)=>{
-    const bx = ox + colW*idx + colW/2;
-    const lift = idx===1 ? -16 : 0;
-    const by = y + medalR + lift;
-    x.save();
-    x.shadowColor="rgba(40,20,10,.18)"; x.shadowBlur=14; x.shadowOffsetY=6;
-    x.beginPath(); x.arc(bx,by,medalR,0,Math.PI*2); x.fillStyle=b.color; x.fill();
-    x.restore();
-    x.beginPath(); x.arc(bx,by,medalR-6,0,Math.PI*2); x.strokeStyle="rgba(255,255,255,.55)"; x.lineWidth=2; x.stroke();
-    if(b.icon==="coin") drawReceiptCoin(x, bx, by-30, 26, "rgba(255,255,255,.9)", b.color==CORAL?CORAL_D:INK);
-    else { x.fillStyle="rgba(255,255,255,.28)"; x.beginPath(); x.arc(bx,by-30,15,0,Math.PI*2); x.fill(); drawReceiptIcon(x, b.icon, bx, by-30, 17, "#fff"); }
-    x.fillStyle="#fff"; x.font=BALOO(800,17); x.textAlign="center";
-    x.fillText(b.value, bx, by+4);
-    x.font=BALOO(600,9.5); x.fillStyle="rgba(255,255,255,.85)";
-    x.fillText(b.label, bx, by+24);
-    x.textAlign="left";
+  const colW = (W-pad*2)/3;
+  stats.forEach((s,idx)=>{
+    const cxCol = ox+pad + colW*idx;
+    x.fillStyle = INK_SOFT; x.font = '600 10.5px system-ui,sans-serif';
+    x.fillText(s[0], cxCol, y+16);
+    x.fillStyle = INK; x.font = SERIF(600,26);
+    x.fillText(s[1], cxCol, y+56);
+    if(idx>0){ x.strokeStyle = RULE; x.lineWidth = 1; x.beginPath(); x.moveTo(cxCol-24,y+6); x.lineTo(cxCol-24,y+66); x.stroke(); }
   });
-  y += badgeH + gap;
+  y += statH + gap;
+  x.strokeStyle = RULE; x.beginPath(); x.moveTo(ox+pad,y-gap+statH+8); x.lineTo(ox+W-pad,y-gap+statH+8); x.stroke();
 
-  /* ---------- sticky-note line items ---------- */
-  const palette = [
-    {bg:"#FFE7E1",fg:CORAL_D,chip:CORAL},
-    {bg:"#D8F5EE",fg:TEAL_D,chip:TEAL},
-    {bg:"#FFF1CE",fg:YELLOW_D,chip:YELLOW},
-    {bg:"#E1EDFF",fg:SKY_D,chip:SKY},
-    {bg:"#EFE5FE",fg:GRAPE_D,chip:GRAPE}
-  ];
+  /* ---------- line items ---------- */
   rows.forEach((row,idx)=>{
-    const isLast = idx === rows.length-1;
-    const pal = palette[idx % palette.length];
-    const rot = isLast ? 0 : (idx % 2 === 0 ? -0.012 : 0.012);
-    const cx0 = ox+W/2, cy0 = y+rowH/2;
-    x.save();
-    x.translate(cx0,cy0); x.rotate(rot); x.translate(-cx0,-cy0);
-    x.shadowColor="rgba(50,30,10,.10)"; x.shadowBlur=8; x.shadowOffsetY=3;
-    const cardPath = roundRectPath(ox+pad*0.6, y, W-pad*1.2, rowH, 18);
-    x.fillStyle = isLast ? YELLOW : pal.bg; x.fill(cardPath);
-    x.shadowColor = "transparent";
-    if(isLast){ x.strokeStyle="rgba(0,0,0,.06)"; x.lineWidth=1; x.stroke(cardPath); }
+    const cy0 = y + rowH/2;
+    if(row[2]==="coin") drawReceiptCoin(x, ox+pad+10, cy0, 21, INK_SOFT);
+    else drawReceiptIcon(x, row[2], ox+pad+10, cy0, 19, INK_SOFT);
 
-    const chipSize=40, chipX=ox+pad+6, chipY=cy0-chipSize/2;
-    const chipBg = isLast ? "#fff" : "#fff";
-    const chipFg = isLast ? YELLOW_D : pal.fg;
-    if(row[2] === "coin") drawReceiptCoin(x, chipX+chipSize/2, chipY+chipSize/2, chipSize, chipBg, chipFg);
-    else if(row[2] === "star") fillReceiptIcon(x, "star", chipX+chipSize/2, chipY+chipSize/2, 26, "#fff");
-    else { x.fillStyle = chipBg; x.fill(roundRectPath(chipX,chipY,chipSize,chipSize,13)); drawReceiptIcon(x, row[2], chipX+chipSize/2, chipY+chipSize/2, 21, chipFg); }
+    x.fillStyle = INK; x.font = F(500);
+    x.fillText(row[0], ox+pad+34, cy0+5);
+    x.fillStyle = INK; x.font = F(600); x.textAlign = "right";
+    x.fillText(row[1], ox+W-pad, cy0+5); x.textAlign = "left";
 
-    x.fillStyle = isLast ? "#5C4400" : "#4A4460"; x.font = isLast ? BALOO(700,16) : F(600);
-    x.fillText(row[0], chipX+chipSize+18, cy0+5);
-    x.fillStyle = isLast ? INK : "#221F33"; x.font = isLast ? BALOO(800,19) : F(700); x.textAlign = "right";
-    x.fillText(row[1], ox+W-pad*0.6-14, cy0+5); x.textAlign = "left";
-    x.restore();
-
-    y += rowH + rowGap;
+    x.strokeStyle = RULE; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(ox+pad, y+rowH); x.lineTo(ox+W-pad, y+rowH); x.stroke();
+    y += rowH;
   });
 
-  /* ---------- odometer total ---------- */
-  x.fillStyle = CORAL_D; x.font = BALOO(700,13); x.textAlign = "center";
-  x.fillText("MONTHLY TOTAL", ox+W/2, y+26);
-  drawOdometer(x, inr2(r.totalMonthly), ox+W/2, y+40, 52, INK, "#fff", INK);
-  x.textAlign = "left";
-  y += totalH;
+  /* ---------- full daily cost ---------- */
+  x.strokeStyle = ACCENT; x.lineWidth = 1.4;
+  x.beginPath(); x.moveTo(ox+pad, y); x.lineTo(ox+W-pad, y); x.stroke();
+  const cyFdc = y + fdcH/2;
+  x.fillStyle = ACCENT; x.font = SERIF(600,17);
+  x.fillText("Full daily cost", ox+pad, cyFdc+6);
+  x.font = SERIF(600,22); x.textAlign = "right";
+  x.fillText(inr2(r.fullDailyCost), ox+W-pad, cyFdc+7); x.textAlign = "left";
+  y += fdcH;
+  x.strokeStyle = ACCENT; x.lineWidth = 1.4;
+  x.beginPath(); x.moveTo(ox+pad, y); x.lineTo(ox+W-pad, y); x.stroke();
 
-  /* ---------- footer: ticket stub ---------- */
-  drawScallopRow(x, ox, y, W, 15, "#FFFDF8");
-  const footerGrad = x.createLinearGradient(ox,y,ox+W,y+footerH);
-  footerGrad.addColorStop(0,GRAPE); footerGrad.addColorStop(1,SKY);
-  x.fillStyle = footerGrad; x.fillRect(ox,y+8,W,footerH-8);
-  drawConfetti(x, ox, y+8, W, footerH-8, 30, ["#FFFFFF","#FFE28A","#B9F5E8"], 9.7);
-
-  if(carImg){
-    const cw=110, ch=cw*(carImg.height/carImg.width);
-    x.save(); x.globalAlpha=.22;
-    x.drawImage(carImg, ox+22, y+footerH-ch-18, cw, ch);
-    x.restore();
-  }
-
-  drawMascot(x, ox+W/2, y+70, 78, "#fff");
+  /* ---------- monthly total ---------- */
   x.textAlign = "center";
-  x.fillStyle = "rgba(255,255,255,.95)"; x.font = BALOO(700,15);
-  x.fillText("YOUR SHARE THIS MONTH", ox+W/2, y+130);
-  x.fillStyle = "#fff"; x.font = BALOO(800,66);
-  x.fillText(inr(r.perHead), ox+W/2, y+198);
+  x.fillStyle = INK_SOFT; x.font = '600 11px system-ui,sans-serif';
+  const totalLabel = "MONTHLY TOTAL";
+  x.save(); x.translate(ox+W/2, y+40);
+  let tlx = -(() => { let s=0; for(const ch of totalLabel) s += x.measureText(ch).width+1.6; return s/2; })();
+  for(const ch of totalLabel){ x.textAlign="left"; x.fillText(ch, tlx, 0); tlx += x.measureText(ch).width+1.6; }
+  x.restore();
+  x.fillStyle = INK; x.font = SERIF(700,38); x.textAlign = "center";
+  x.fillText(inr2(r.totalMonthly), ox+W/2, y+90);
+  x.textAlign = "left";
+  y += totalH + gap;
 
-  const capTxt = inr2(r.totalMonthly) + " split " + Math.max(i.names.length,1) + " ways · Drive";
-  x.font = BALOO(600,13);
-  const capW = x.measureText(capTxt).width + 34;
-  x.fillStyle = "rgba(255,255,255,.2)"; x.fill(roundRectPath(ox+W/2-capW/2, y+216, capW, 34, 17));
-  x.fillStyle = "rgba(255,255,255,.95)";
-  x.fillText(capTxt, ox+W/2, y+238);
+  /* ---------- footer: your share ---------- */
+  const footerBox = roundRectPath(ox+pad, y, W-pad*2, footerH, 14);
+  x.fillStyle = ACCENT_TINT; x.fill(footerBox);
+  x.strokeStyle = ACCENT; x.lineWidth = 1.3; x.stroke(footerBox);
+
+  x.textAlign = "center";
+  x.fillStyle = ACCENT; x.font = '600 12px system-ui,sans-serif';
+  x.save(); x.translate(ox+W/2, y+38);
+  const shareLabel = "YOUR SHARE THIS MONTH";
+  let slx = -(() => { let s=0; for(const ch of shareLabel) s += x.measureText(ch).width+1.4; return s/2; })();
+  for(const ch of shareLabel){ x.textAlign="left"; x.fillText(ch, slx, 0); slx += x.measureText(ch).width+1.4; }
+  x.restore();
+
+  x.fillStyle = ACCENT; x.font = SERIF(700,56); x.textAlign = "center";
+  x.fillText(inr(r.perHead), ox+W/2, y+104);
+  x.fillStyle = INK_SOFT; x.font = F(500);
+  x.fillText(inr2(r.totalMonthly) + " split " + Math.max(i.names.length,1) + " ways · Drive", ox+W/2, y+140);
   x.textAlign = "left";
 
   x.restore();
