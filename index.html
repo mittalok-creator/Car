@@ -933,71 +933,163 @@ function bindSplit(){
 }
 
 /* ---------- receipt image ---------- */
+const RECEIPT_ICONS = {
+  cal:   "M6 4.5h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z M5 9.5h14 M8 2.5v4 M16 2.5v4",
+  road:  "M8.2 3 4.2 21 M15.8 3l4 18 M11 7.5v3 M11.4 14v3",
+  fuel:  "M12 3s6 6.7 6 10.8A6 6 0 0 1 6 13.8C6 9.7 12 3 12 3Z",
+  wrench:"M14.7 3.3a4 4 0 0 0-5.4 5.1L3.6 14 6 16.4l5.6-5.7a4 4 0 0 0 5.1-5.4l-2.75 2.75-2.1-2.1Z",
+  toll:  "M4 18v-3.2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V18 M4 18h16 M7 12.8V6 M17 12.8V6 M6 6h12",
+  wallet:"M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M16.3 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M2 20c0-3 3-5.2 6-5.2s6 2.2 6 5.2 M13.3 15c2.6.4 5 2.3 5 5",
+  car:   "M4 15.6v-4L5.6 7A2 2 0 0 1 7.4 5.7h9.2A2 2 0 0 1 18.4 7L20 11.6v4 M4 15.6h16v2.2a1 1 0 0 1-1 1h-1.3a1 1 0 0 1-1-1v-1.3H7.3v1.3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z M7.3 15.6a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0Z M18.9 15.6a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0Z M5 11.6h14"
+};
+function drawReceiptIcon(ctx, key, cx, cy, size, color){
+  const p = new Path2D(RECEIPT_ICONS[key]);
+  ctx.save();
+  ctx.translate(cx - size/2, cy - size/2);
+  ctx.scale(size/24, size/24);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.1;
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.stroke(p);
+  ctx.restore();
+}
+function drawReceiptCoin(ctx, cx, cy, size, bg, fg){
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fillStyle = bg; ctx.fill();
+  ctx.fillStyle = fg; ctx.font = "700 " + Math.round(size*0.5) + "px system-ui,sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("₹", cx, cy+1);
+  ctx.textBaseline = "alphabetic";
+  ctx.restore();
+}
+function roundRectPath(x0,y0,w,h,r){
+  const p = new Path2D();
+  p.moveTo(x0+r,y0);
+  p.arcTo(x0+w,y0,x0+w,y0+h,r);
+  p.arcTo(x0+w,y0+h,x0,y0+h,r);
+  p.arcTo(x0,y0+h,x0,y0,r);
+  p.arcTo(x0,y0,x0+w,y0,r);
+  p.closePath();
+  return p;
+}
 async function shareReceipt(){
   const i = splitInputs(), r = computeSplit(i);
-  const W = 720, pad = 44, rowH = 46;
+  const W = 680, M = 30, R = 30, pad = 38, rowH = 58;
   const rows = [
-    ["Month", parse(i.month + "-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"})],
-    ["Working days", String(i.workingDays)],
-    ["Days the car ran", String(i.runDays)],
-    ["Mileage", i.mileage + " km/l"],
-    ["Petrol price", inr2(i.petrolPrice) + "/l"],
-    ["Running distance", i.kmPerDay + " km/day"],
-    ["Petrol used", r.fuelPerDay.toFixed(2) + " L/day"],
-    ["Fuel cost", inr2(r.fuelCostPerDay) + "/day"],
-    ["Maintenance", inr2(i.maintenancePerDay) + "/day"],
-    ["Toll", inr2(r.tollPerDay) + "/day (" + inr(i.tollPerMonth) + "/month)"],
-    ["Full daily cost", inr2(r.fullDailyCost)],
-    ["Riders", i.names.join(", ") || "—"]
+    ["Month", parse(i.month + "-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), "cal"],
+    ["Working days", String(i.workingDays), "cal"],
+    ["Days the car ran", String(i.runDays), "road"],
+    ["Mileage", i.mileage + " km/l", "fuel"],
+    ["Petrol price", inr2(i.petrolPrice) + "/l", "coin"],
+    ["Running distance", i.kmPerDay + " km/day", "road"],
+    ["Petrol used", r.fuelPerDay.toFixed(2) + " L/day", "fuel"],
+    ["Fuel cost", inr2(r.fuelCostPerDay) + "/day", "coin"],
+    ["Maintenance", inr2(i.maintenancePerDay) + "/day", "wrench"],
+    ["Toll", inr2(r.tollPerDay) + "/day (" + inr(i.tollPerMonth) + "/mo)", "toll"]
   ];
-  const H = 168 + rows.length*rowH + 66 + 210;
+  const headerH = 190, fdcH = 68, totalH = 82, footerH = 232;
+  const cardH = headerH + rows.length*rowH + fdcH + totalH + footerH;
+  const H = cardH + M*2;
+  const CW = W + M*2;
+
   const c = document.createElement("canvas");
-  c.width = W*2; c.height = H*2; const x = c.getContext("2d"); x.scale(2,2);
+  c.width = CW*2; c.height = H*2;
+  const x = c.getContext("2d"); x.scale(2,2);
   const F = w => w + ' 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 
-  x.fillStyle = "#FFFFFF"; x.fillRect(0,0,W,H);
-  x.fillStyle = "#0E0E14"; x.fillRect(0,0,W,168);
-  x.fillStyle = "rgba(255,255,255,.55)"; x.font = '700 13px sans-serif';
-  x.fillText("CARPOOL COST SPLIT", pad, 58);
-  x.fillStyle = "#fff"; x.font = "800 34px sans-serif";
-  x.fillText(parse(i.month+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), pad, 100);
-  x.fillStyle = "rgba(255,255,255,.7)"; x.font = '600 15px sans-serif';
-  x.fillText(state.vehicle.vehicleName + " · " + state.vehicle.plate, pad, 130);
+  x.fillStyle = "#EEEBF6"; x.fillRect(0,0,CW,H);
 
-  let y = 168;
+  const card = roundRectPath(M, M, W, cardH, R);
+  x.save();
+  x.shadowColor = "rgba(45,25,110,.28)"; x.shadowBlur = 46; x.shadowOffsetY = 20;
+  x.fillStyle = "#fff"; x.fill(card);
+  x.restore();
+  x.save(); x.clip(card);
+
+  const ox = M, oy = M;
+
+  const headerGrad = x.createLinearGradient(ox,oy,ox+W,oy+headerH);
+  headerGrad.addColorStop(0,"#5B45E0"); headerGrad.addColorStop(.55,"#8B5CF6"); headerGrad.addColorStop(1,"#06B6D4");
+  x.fillStyle = headerGrad; x.fillRect(ox,oy,W,headerH);
+  x.save();
+  x.globalAlpha = .16; x.fillStyle = "#fff";
+  x.beginPath(); x.arc(ox+W-70, oy+34, 92, 0, Math.PI*2); x.fill();
+  x.beginPath(); x.arc(ox+W-150, oy+150, 46, 0, Math.PI*2); x.fill();
+  x.restore();
+
+  x.fillStyle = "rgba(255,255,255,.82)"; x.font = '700 13px system-ui,sans-serif';
+  x.fillText("MONTHLY CAR EXPENSES", ox+pad, oy+50);
+  x.fillStyle = "#fff"; x.font = "800 36px system-ui,sans-serif";
+  x.fillText(parse(i.month+"-01").toLocaleDateString("en-IN",{month:"long",year:"numeric"}), ox+pad, oy+96);
+  x.fillStyle = "rgba(255,255,255,.85)"; x.font = '600 15px system-ui,sans-serif';
+  x.fillText(state.vehicle.vehicleName + " · " + state.vehicle.plate, ox+pad, oy+126);
+  drawReceiptIcon(x, "car", ox+W-pad-20, oy+42, 40, "rgba(255,255,255,.9)");
+
+  let y = oy + headerH;
+  const palette = [
+    {bg:"#EEE8FE",fg:"#6D4FE0"},
+    {bg:"#DCF6F1",fg:"#0D9488"},
+    {bg:"#FEF1D6",fg:"#B45309"},
+    {bg:"#E1E7FF",fg:"#4338CA"}
+  ];
   rows.forEach((row,idx)=>{
-    x.fillStyle = idx % 2 ? "#FFFFFF" : "#F4F4F7";
-    x.fillRect(0,y,W,rowH);
-    x.fillStyle = "#63636F"; x.font = F(600);
-    x.fillText(row[0], pad, y + 29);
-    x.fillStyle = "#0E0E14"; x.font = F(700); x.textAlign = "right";
-    x.fillText(row[1], W - pad, y + 29); x.textAlign = "left";
+    const pal = palette[idx % palette.length];
+    const chipSize = 40, chipX = ox+pad, chipY = y + rowH/2 - chipSize/2;
+    if(row[2] === "coin") drawReceiptCoin(x, chipX+chipSize/2, chipY+chipSize/2, chipSize, pal.bg, pal.fg);
+    else { x.fillStyle = pal.bg; x.fill(roundRectPath(chipX,chipY,chipSize,chipSize,13)); drawReceiptIcon(x, row[2], chipX+chipSize/2, chipY+chipSize/2, 21, pal.fg); }
+
+    x.fillStyle = "#5B5770"; x.font = F(600);
+    x.fillText(row[0], chipX+chipSize+18, y+rowH/2+5);
+    x.fillStyle = "#17141F"; x.font = F(700); x.textAlign = "right";
+    x.fillText(row[1], ox+W-pad, y+rowH/2+5); x.textAlign = "left";
+
+    if(idx < rows.length-1){
+      x.strokeStyle = "#EEECF6"; x.lineWidth = 1;
+      x.beginPath(); x.moveTo(ox+pad, y+rowH); x.lineTo(ox+W-pad, y+rowH); x.stroke();
+    }
     y += rowH;
   });
 
-  x.fillStyle = "#F4F4F7"; x.fillRect(0,y,W,66);
-  x.fillStyle = "#63636F"; x.font = '700 13px sans-serif';
-  x.fillText("MONTHLY TOTAL", pad, y + 40);
-  x.fillStyle = "#0E0E14"; x.font = '800 24px sans-serif'; x.textAlign = "right";
-  x.fillText(inr2(r.totalMonthly), W - pad, y + 42); x.textAlign = "left";
-  y += 66;
+  x.fillStyle = "#F6F4FE"; x.fillRect(ox,y,W,fdcH);
+  x.fillStyle = "#6D4FE0"; x.font = F(700);
+  x.fillText("Full daily cost", ox+pad, y+fdcH/2+5);
+  x.fillStyle = "#17141F"; x.font = '800 21px system-ui,sans-serif'; x.textAlign = "right";
+  x.fillText(inr2(r.fullDailyCost), ox+W-pad, y+fdcH/2+7); x.textAlign = "left";
+  y += fdcH;
 
-  x.fillStyle = "#0E0E14"; x.fillRect(0,y,W,210);
-  x.fillStyle = "rgba(255,255,255,.55)"; x.font = '700 13px sans-serif'; x.textAlign = "center";
-  x.fillText("EACH RIDER PAYS", W/2, y + 58);
-  x.fillStyle = "#fff"; x.font = '800 74px sans-serif';
-  x.fillText(inr(r.perHead), W/2, y + 132);
-  x.fillStyle = "rgba(255,255,255,.66)"; x.font = '600 14px sans-serif';
-  x.fillText(inr2(r.totalMonthly) + " split " + i.names.length + " ways · generated in Drive", W/2, y + 168);
+  x.fillStyle = "#17141F"; x.fillRect(ox,y,W,totalH);
+  x.fillStyle = "rgba(255,255,255,.6)"; x.font = '700 13px system-ui,sans-serif';
+  x.fillText("MONTHLY TOTAL", ox+pad, y+36);
+  x.fillStyle = "#fff"; x.font = '800 26px system-ui,sans-serif'; x.textAlign = "right";
+  x.fillText(inr2(r.totalMonthly), ox+W-pad, y+42); x.textAlign = "left";
+  y += totalH;
+
+  const footerGrad = x.createLinearGradient(ox,y,ox+W,y+footerH);
+  footerGrad.addColorStop(0,"#06B6D4"); footerGrad.addColorStop(.5,"#8B5CF6"); footerGrad.addColorStop(1,"#5B45E0");
+  x.fillStyle = footerGrad; x.fillRect(ox,y,W,footerH);
+  x.save();
+  x.globalAlpha = .14; x.fillStyle = "#fff";
+  x.beginPath(); x.arc(ox+64, y+footerH-36, 84, 0, Math.PI*2); x.fill();
+  x.restore();
+
+  x.textAlign = "center";
+  drawReceiptIcon(x, "wallet", ox+W/2, y+48, 36, "rgba(255,255,255,.88)");
+  x.fillStyle = "rgba(255,255,255,.85)"; x.font = '600 15px system-ui,sans-serif';
+  x.fillText("your share this month", ox+W/2, y+92);
+  x.fillStyle = "#fff"; x.font = '800 64px system-ui,sans-serif';
+  x.fillText(inr(r.perHead), ox+W/2, y+156);
+  x.fillStyle = "rgba(255,255,255,.72)"; x.font = '600 14px system-ui,sans-serif';
+  x.fillText(inr2(r.totalMonthly) + " split " + Math.max(i.names.length,1) + " ways · Drive", ox+W/2, y+188);
   x.textAlign = "left";
 
+  x.restore();
+
   const blob = await new Promise(res=>c.toBlob(res,"image/png"));
-  const file = new File([blob], "carpool-split.png", {type:"image/png"});
+  const file = new File([blob], "monthly-car-expenses.png", {type:"image/png"});
   if(navigator.canShare && navigator.canShare({files:[file]})){
-    try{ await navigator.share({files:[file], title:"Carpool split"}); return; }catch(e){ /* fall through to download */ }
+    try{ await navigator.share({files:[file], title:"Monthly car expenses"}); return; }catch(e){ /* fall through to download */ }
   }
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = "carpool-split.png"; a.click();
+  const a = document.createElement("a"); a.href = url; a.download = "monthly-car-expenses.png"; a.click();
   URL.revokeObjectURL(url); toast("Image downloaded");
 }
 
