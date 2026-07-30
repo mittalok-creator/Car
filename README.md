@@ -4,8 +4,9 @@ Single-file web app for tracking every rupee one car costs. Built for a
 Volkswagen Taigun (2024) on UP81DE4446, but the vehicle name and plate are
 editable from the More screen.
 
-**Live:** enable GitHub Pages on this repository (Settings → Pages → Deploy from
-branch → `main` / root). The app is `index.html`; there is no build step.
+**Live:** https://mittalok-creator.github.io/Car/ and https://car.alokmittal.net
+(GitHub Pages, custom domain via the `CNAME` file). The app is `index.html`;
+there is no build step.
 
 ## What it does
 
@@ -48,10 +49,18 @@ toll, 23 run-days, 5 riders → ₹699.50/day, ₹16,088.46/month, ₹3,218/head
 
 ## Data
 
-Everything is stored in the browser via `localStorage`. Nothing is sent
-anywhere; there is no backend and no account. The app starts empty —
-"Clear all data" in More wipes every entry (with a confirmation) if you
-ever want a clean slate. CSV export is on the same screen.
+Everything is stored in the browser via `localStorage` by default — no
+backend, no account required. The app starts empty — "Clear all data" in
+More wipes every entry (with a confirmation) if you ever want a clean
+slate. CSV export is on the same screen.
+
+### Optional: realtime sync via Firebase
+
+More → "Cloud sync (Google)" lets you connect a free Firebase project:
+paste the project's web config, sign in with Google, and every change
+syncs in realtime (via Firestore `onSnapshot`) to every device signed in
+with the same Google account. Without a saved config, the app behaves
+exactly as the local-only version above.
 
 ## Stack
 

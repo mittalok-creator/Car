@@ -42,6 +42,7 @@ button:active{transform:scale(.97)}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:8px}
 .app{max-width:480px;margin:0 auto;padding:0 16px}
 .screen{display:none}
+.hidden{display:none!important}
 .screen.active{display:block;animation:enter var(--dur) var(--ease)}
 @keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
@@ -398,6 +399,16 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
     <p class="hint" id="set-service-note"></p>
   </div>
 
+  <div class="form">
+    <h3>Cloud sync (Google)</h3>
+    <p class="hint">Paste your Firebase project's web config, save it, then sign in with Google. Once connected, everything you add here syncs in realtime to every device you're signed in on.</p>
+    <label><div class="lb">Firebase config (JSON)</div><textarea id="fb-config" rows="5" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...", ...}'></textarea></label>
+    <button class="btn ghost" id="fb-save-config">Save config</button>
+    <div class="hint" id="fb-status" style="margin:10px 0">No Firebase config saved yet</div>
+    <button class="btn" id="fb-signin">Sign in with Google</button>
+    <button class="btn quiet hidden" id="fb-signout">Sign out</button>
+  </div>
+
   <div class="card">
     <div class="kv"><span>Records stored</span><b class="num" id="m-count">0</b></div>
     <div class="kv"><span>Total logged</span><b class="num" id="m-total">₹0</b></div>
@@ -469,6 +480,108 @@ async function load(){
 async function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }
   catch(e){ toast("Saved for this session only"); }
+  if(fbUser){ clearTimeout(fbSaveTimer); fbSaveTimer = setTimeout(pushStateToFirestore, 700); }
+}
+
+/* ---------- Firebase: Google sign-in + realtime Firestore sync ---------- */
+const FB_KEY = "drive:fbconfig";
+let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbUnsub=null, fbSaveTimer=null, fbApplyingRemote=false;
+
+function getFirebaseConfig(){
+  try{ return JSON.parse(localStorage.getItem(FB_KEY) || "null"); }catch(e){ return null; }
+}
+
+function withTimeout(promise, ms, msg){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error(msg || "timed out")), ms))
+  ]);
+}
+async function initFirebase(){
+  const cfg = getFirebaseConfig();
+  if(!cfg){ return; }
+  const [{ initializeApp }, authMod, storeMod] = await withTimeout(Promise.all([
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"),
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js"),
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js")
+  ]), 12000, "timed out loading the Firebase SDK — check your connection and try again");
+  fbApp = initializeApp(cfg);
+  fbAuth = authMod.getAuth(fbApp);
+  fbDb = storeMod.getFirestore(fbApp);
+  window.__fb = { ...authMod, ...storeMod };
+  authMod.onAuthStateChanged(fbAuth, user=>{
+    fbUser = user;
+    updateFbUI();
+    if(fbUnsub){ fbUnsub(); fbUnsub = null; }
+    if(user){
+      const ref = storeMod.doc(fbDb, "users", user.uid, "app", "state");
+      fbUnsub = storeMod.onSnapshot(ref, snap=>{
+        if(snap.exists()){
+          const remote = snap.data();
+          if(remote && remote.json && remote.json !== JSON.stringify(state)){
+            fbApplyingRemote = true;
+            state = JSON.parse(remote.json);
+            try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+            renderAll(); bindSplitValues();
+            fbApplyingRemote = false;
+          }
+        } else {
+          pushStateToFirestore();
+        }
+      }, err=>{ toast("Sync error: " + err.message); });
+    }
+  });
+}
+
+function pushStateToFirestore(){
+  if(!fbUser || !fbDb || fbApplyingRemote || !window.__fb) return;
+  const { doc, setDoc } = window.__fb;
+  setDoc(doc(fbDb,"users",fbUser.uid,"app","state"), { json: JSON.stringify(state), updatedAt: Date.now() }).catch(e=>toast("Sync failed: "+e.message));
+}
+
+function updateFbUI(){
+  const st = $("#fb-status"), signIn = $("#fb-signin"), signOut = $("#fb-signout"), dot = $("#sync-dot");
+  if(!st) return;
+  if(fbUser){
+    st.textContent = "Connected as " + (fbUser.email || fbUser.displayName || "Google account");
+    signIn.classList.add("hidden"); signOut.classList.remove("hidden");
+    if(dot) dot.classList.add("on");
+  } else {
+    st.textContent = getFirebaseConfig() ? "Not signed in" : "No Firebase config saved yet";
+    signIn.classList.remove("hidden"); signOut.classList.add("hidden");
+    if(dot) dot.classList.remove("on");
+  }
+}
+
+function bindFirebase(){
+  $("#fb-save-config").addEventListener("click", async ()=>{
+    let cfg;
+    try{ cfg = JSON.parse($("#fb-config").value); }
+    catch(e){ toast("That doesn't look like valid config JSON"); return; }
+    localStorage.setItem(FB_KEY, JSON.stringify(cfg));
+    toast("Firebase config saved");
+    try{ await initFirebase(); }
+    catch(e){ toast("Could not connect to Firebase: " + e.message); }
+    updateFbUI();
+  });
+  $("#fb-signin").addEventListener("click", async ()=>{
+    if(!fbApp){
+      try{ await initFirebase(); }
+      catch(e){ toast("Could not connect to Firebase: " + e.message); return; }
+    }
+    if(!fbAuth){ toast("Save your Firebase config first"); return; }
+    const { GoogleAuthProvider, signInWithPopup } = window.__fb;
+    try{ await signInWithPopup(fbAuth, new GoogleAuthProvider()); toast("Signed in"); }
+    catch(e){ toast("Sign-in failed: " + e.message); }
+  });
+  $("#fb-signout").addEventListener("click", async ()=>{
+    if(!fbAuth) return;
+    const { signOut } = window.__fb;
+    await signOut(fbAuth); toast("Signed out");
+  });
+  const cfg = getFirebaseConfig();
+  if(cfg) $("#fb-config").value = JSON.stringify(cfg, null, 2);
+  updateFbUI();
 }
 
 /* ---------- derived: fuel maths (exactly per brief) ---------- */
@@ -1244,9 +1357,10 @@ function renderAll(){ renderHome(); renderFuel(); renderService(); renderExpense
 (async function init(){
   await load();
   initHero();
-  bindFuel(); bindService(); bindExpenses(); bindMore(); bindSplit();
+  bindFuel(); bindService(); bindExpenses(); bindMore(); bindSplit(); bindFirebase();
   resetFuelForm(); resetServiceForm(); resetExpenseForm();
   renderAll();
+  if(getFirebaseConfig()) initFirebase().catch(e=>toast("Could not connect to Firebase: " + e.message));
   movePill(0);
   window.addEventListener("resize", ()=>movePill(Math.max(0, TABS.indexOf(currentTab))));
   document.body.addEventListener("click", e=>{
