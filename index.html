@@ -164,6 +164,11 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
 .fchip{flex:none;padding:9px 14px;border-radius:999px;font-size:13px;font-weight:700;background:var(--surface);
   box-shadow:var(--shadow-1);color:var(--ink-2)}
 .fchip.on{background:var(--ink);color:#fff}
+.mfilter{display:flex;gap:8px;align-items:flex-end;margin-top:18px}
+.mfilter label{flex:1;margin-top:0}
+.mfilter .clear{flex:none;padding:13px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:700;
+  background:var(--surface);box-shadow:var(--shadow-1);color:var(--ink-2);white-space:nowrap}
+.mfilter .clear:disabled{opacity:.4}
 
 /* ---------- splitter ---------- */
 .result{margin-top:14px;border-radius:var(--r-xl);padding:24px 22px;color:#fff;background:var(--ink);
@@ -290,6 +295,10 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
     <label><div class="lb">Notes</div><input name="notes" placeholder="Pump, trip, anything worth remembering"></label>
     <button class="btn" type="submit" id="fuel-submit">Save fill-up</button>
   </form>
+  <div class="mfilter">
+    <label><div class="lb">Filter by month</div><input id="fuel-month" type="month"></label>
+    <button type="button" class="clear" id="fuel-month-clear" disabled>All time</button>
+  </div>
   <div id="fuel-list"></div>
 </section>
 
@@ -315,6 +324,10 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
     <p class="hint">Whichever you set replaces the service reminder on Home.</p>
     <button class="btn" type="submit" id="service-submit">Save service</button>
   </form>
+  <div class="mfilter">
+    <label><div class="lb">Filter by month</div><input id="service-month" type="month"></label>
+    <button type="button" class="clear" id="service-month-clear" disabled>All time</button>
+  </div>
   <div id="service-list"></div>
 </section>
 
@@ -335,6 +348,10 @@ textarea{min-height:66px;resize:vertical;font-weight:500}
     <button class="btn" type="submit" id="expense-submit">Save expense</button>
   </form>
   <label style="margin-top:18px"><input id="exp-search" placeholder="Search descriptions…"></label>
+  <div class="mfilter">
+    <label><div class="lb">Filter by month</div><input id="exp-month" type="month"></label>
+    <button type="button" class="clear" id="exp-month-clear" disabled>All time</button>
+  </div>
   <div class="filters" id="exp-filters"></div>
   <div id="expense-list"></div>
 </section>
@@ -456,6 +473,7 @@ const fmtDate = s => {
 };
 const daysUntil = s => Math.ceil((parse(s) - new Date(new Date().toDateString())) / 86400000);
 const uid = () => Math.random().toString(36).slice(2,10);
+const monthLabel = ym => new Date(ym + "-01T00:00:00").toLocaleDateString("en-IN",{month:"long",year:"numeric"});
 
 /* ---------- blank starting state ---------- */
 function seed(){
@@ -802,9 +820,12 @@ function renderBars(){
 
 /* ---------- fuel screen ---------- */
 let editingFuel = null;
+let fuelMonth = "";
 function renderFuel(){
-  const fills = fuelSeries().slice().reverse();
-  $("#fuel-count").textContent = fills.length + " fills";
+  const all = fuelSeries().slice().reverse();
+  const fills = fuelMonth ? all.filter(f=>f.date.slice(0,7)===fuelMonth) : all;
+  $("#fuel-count").textContent = fills.length + " fills" + (fuelMonth ? " in " + monthLabel(fuelMonth) : "");
+  $("#fuel-month-clear").disabled = !fuelMonth;
   $("#fuel-list").innerHTML = fills.length ? fills.map(f=>{
     const right = f.first
       ? `<span class="badge">first fill</span>`
@@ -817,10 +838,14 @@ function renderFuel(){
       </div>
       <div class="side">${right}</div>
     </button>`;
-  }).join("") : `<div class="empty">No fills yet. Add one above and the mileage maths starts on the second.</div>`;
+  }).join("") : all.length
+      ? `<div class="empty">No fills in ${monthLabel(fuelMonth)}.</div>`
+      : `<div class="empty">No fills yet. Add one above and the mileage maths starts on the second.</div>`;
 }
 function bindFuel(){
   const form = $("#form-fuel");
+  $("#fuel-month").addEventListener("change", e=>{ fuelMonth = e.target.value; renderFuel(); });
+  $("#fuel-month-clear").addEventListener("click", ()=>{ fuelMonth = ""; $("#fuel-month").value = ""; renderFuel(); });
   const recalc = ()=>{
     const a = +form.amount.value, p = +form.pricePerLitre.value;
     $("#fuel-litres").textContent = (a>0 && p>0) ? (a/p).toFixed(2) + " L" : "—";
@@ -860,9 +885,12 @@ function resetFuelForm(){
 
 /* ---------- service screen ---------- */
 let editingService = null;
+let serviceMonth = "";
 function renderService(){
-  const list = state.expenses.filter(e=>e.category==="Service & Maintenance").sort((a,b)=>a.date<b.date?1:-1);
-  $("#service-count").textContent = list.length + " records";
+  const all = state.expenses.filter(e=>e.category==="Service & Maintenance").sort((a,b)=>a.date<b.date?1:-1);
+  const list = serviceMonth ? all.filter(r=>r.date.slice(0,7)===serviceMonth) : all;
+  $("#service-count").textContent = list.length + " records" + (serviceMonth ? " in " + monthLabel(serviceMonth) : "");
+  $("#service-month-clear").disabled = !serviceMonth;
   $("#service-list").innerHTML = list.length ? list.map(s=>{
     const next = s.nextServiceDate ? "next: " + fmtDate(s.nextServiceDate)
       : s.nextServiceKm ? "next: " + km(s.nextServiceKm) + " km" : "";
@@ -874,7 +902,9 @@ function renderService(){
       </div>
       <div class="side"><div class="m num">${inr(s.amount)}</div></div>
     </button>`;
-  }).join("") : `<div class="empty">No services logged yet.</div>`;
+  }).join("") : all.length
+      ? `<div class="empty">No services in ${monthLabel(serviceMonth)}.</div>`
+      : `<div class="empty">No services logged yet.</div>`;
   const s = latestService();
   $("#set-service-note").textContent = s
     ? (s.nextServiceDate ? "Service reminder: " + fmtDate(s.nextServiceDate) + ", set from your last service."
@@ -884,6 +914,8 @@ function renderService(){
 }
 function bindService(){
   const form = $("#form-service");
+  $("#service-month").addEventListener("change", e=>{ serviceMonth = e.target.value; renderService(); });
+  $("#service-month-clear").addEventListener("click", ()=>{ serviceMonth = ""; $("#service-month").value = ""; renderService(); });
   const sync = ()=>{
     const t = form.nextType.value;
     $("#next-date-wrap").hidden = t !== "date";
@@ -928,12 +960,14 @@ function resetServiceForm(){
 }
 
 /* ---------- expenses screen ---------- */
-let editingExpense = null, expFilter = "All", expQuery = "";
+let editingExpense = null, expFilter = "All", expQuery = "", expMonth = "";
 function renderExpenses(){
   const all = state.expenses.filter(e=>OTHER_CATS.includes(e.category)).sort((a,b)=>a.date<b.date?1:-1);
   const list = all.filter(e=>(expFilter === "All" || e.category === expFilter) &&
+    (!expMonth || e.date.slice(0,7)===expMonth) &&
     (e.description||"").toLowerCase().includes(expQuery.toLowerCase()));
   $("#expense-count").textContent = inr(all.reduce((s,e)=>s+e.amount,0)) + " logged";
+  $("#exp-month-clear").disabled = !expMonth;
   $("#exp-filters").innerHTML = ["All",...OTHER_CATS].map(c=>
     `<button class="fchip ${c===expFilter?"on":""}" data-filter="${c}">${c}</button>`).join("");
   $("#expense-list").innerHTML = list.length ? list.map(e=>
@@ -958,6 +992,8 @@ function bindExpenses(){
   });
   $("#expense-cancel").addEventListener("click", ()=>{ editingExpense = null; resetExpenseForm(); });
   $("#exp-search").addEventListener("input", e=>{ expQuery = e.target.value; renderExpenses(); });
+  $("#exp-month").addEventListener("change", e=>{ expMonth = e.target.value; renderExpenses(); });
+  $("#exp-month-clear").addEventListener("click", ()=>{ expMonth = ""; $("#exp-month").value = ""; renderExpenses(); });
   $("#exp-filters").addEventListener("click", e=>{
     const b = e.target.closest("[data-filter]"); if(!b) return;
     expFilter = b.dataset.filter; renderExpenses();

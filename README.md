@@ -12,11 +12,13 @@ there is no build step.
 
 - **Fuel log** — litres are computed from amount ÷ price per litre, never typed.
   Each fill shows its own km/l with an up/down trend against the previous fill,
-  plus cost per km. The earliest fill on record shows "first fill".
+  plus cost per km. The earliest fill on record shows "first fill". Filterable
+  by month.
 - **Service history** — either a next-service date *or* an odometer reading,
-  never both. Whichever is set drives the reminder on Home.
+  never both. Whichever is set drives the reminder on Home. Filterable by month.
 - **Other expenses** — insurance, challans, tolls, EMI, accessories, other.
-  Searchable, category-filterable, tap an entry to edit it.
+  Searchable, category-filterable, and filterable by month — tap an entry to
+  edit it.
 - **Carpool split** — splits a month of running costs across riders and exports
   the breakdown as a shareable PNG receipt.
 - **Home** — drag-to-spin vehicle hero, odometer readout, progress to next
